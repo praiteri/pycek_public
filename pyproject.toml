@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools >= 61.0", "wheel", "numpy"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project]
+name = "pycek"
+version = "1.0.0"
+requires-python = ">= 3.8"
+authors = [
+  {name = "Paolo Raiteri", email = "p.raiteri@curtin.edu.au"},
+]
+description = "read and write coordinates"
+license = {file = "LICENSE"}
+readme = {file = "README.md", content-type = "text/markdown"}
+dependencies = [
+    "numpy",
+    "scipy",
+    "lmfit",
+    "matplotlib",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "mypy",
+    "pylint",
+    "alive-progress",
+] 
