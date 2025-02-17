@@ -14,9 +14,9 @@ def _(mo):
         """
         #Labs
 
-        1. [Bomb Calorimetry](/bc)
-        2. [Crystal Violet](/cv)
-        3. [Statistics](/stats)
+        1. [Statistics](/stats)
+        2. [Bomb Calorimetry](/bc)
+        3. [Crystal Violet](/cv)
         4. [Surface Adsorption](/surface)
         """
     )
