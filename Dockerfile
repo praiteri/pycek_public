@@ -19,7 +19,7 @@ RUN chown -R user:user /app
 USER user
 
 # data directory for hf spaces ephemeral storage
-RUN mkdir -p /data && chown -R user:user /data
+RUN [ ! -d "/data" ] && (mkdir -p /data && chown -R user:user /data) || echo "Data directory exists"
 WORKDIR /data
 
 CMD ["python", "/app/app.py"]
