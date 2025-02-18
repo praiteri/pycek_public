@@ -4,7 +4,6 @@ emoji: 🧪
 colorFrom: blue
 colorTo: green
 sdk: docker
-docker_path: deployment/Dockerfile
 app_port: 8000
 pinned: false
 ---
