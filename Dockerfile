@@ -5,7 +5,6 @@ RUN useradd -m -u 1000 user
 ENV PATH="/home/user/.local/bin:$PATH"
 ENV UV_SYSTEM_PYTHON=1
 
-WORKDIR /app
 
 COPY --chown=user ./deployment/requirements.txt requirements.txt
 RUN uv pip install -r requirements.txt
@@ -19,4 +18,8 @@ RUN chown -R user:user /app
 
 USER user
 
-CMD ["python", "app.py"]
+# data directory for hf spaces ephemeral storage
+RUN mkdir -p /data && chown -R user:user /data
+WORKDIR /data
+
+CMD ["python", "/app/app.py"]
