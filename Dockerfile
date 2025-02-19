@@ -4,7 +4,7 @@ RUN useradd -m -u 1000 user
 ENV PATH="/home/user/.local/bin:$PATH"
 
 ENV UV_SYSTEM_PYTHON=1
-ENV PYCEK_WORKDIR=/data
+ENV PYCEK_WORKDIR=/tmp
 WORKDIR /app
 COPY --chown=user ./deployment/requirements.txt requirements.txt
 RUN uv pip install -r requirements.txt
