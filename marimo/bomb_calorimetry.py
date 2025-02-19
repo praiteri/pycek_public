@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.11.0"
+__generated_with = "0.11.2"
 app = marimo.App(width="medium")
 
 
@@ -94,11 +94,11 @@ def _(cek, lab, mo, reset_button, run_button, sample_selector):
         mo.stop(sample_selector.value is None, mo.md(f"### No sample selected !!"))
 
         lab.set_parameters(sample=sample_selector.value)
-        _ = lab.create_data()
-        fname = lab.write_data_to_file()
+        data = lab.create_data()
+        print(data)
+        file_content = lab.write_data_to_string()
 
-        with open(fname, "r") as f:
-            file_content = f.read()
+        fname = lab.filename_gen.random
         message = f"### Running Experiment\n"
         for k,v in lab.metadata.items():
             message += f"####{k} = {v}\n"
@@ -111,15 +111,13 @@ def _(cek, lab, mo, reset_button, run_button, sample_selector):
         )
 
         plot = cek.plotting()
-        data,_,_ = lab.read_data_file(fname)
-        plot.quick_plot(data,output=fname.replace(".csv",".png"))
-        image = mo.image(fname.replace(".csv",".png"),width=500)
+        print(data)
+        image = plot.quick_plot(scatter=data,output="marimo")
 
-    mo.vstack([mo.md(message),download_button,image])
+    mo.hstack([mo.vstack([mo.md(message),download_button]),image])
     return (
         data,
         download_button,
-        f,
         file_content,
         fname,
         image,

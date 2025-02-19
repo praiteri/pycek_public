@@ -97,28 +97,25 @@ def _(cek, lab, mo, reset_button, run_button, student_ID, temperature):
         lab.set_parameters(
             temperature = temperature.value+273.15
         )
-        _ = lab.create_data()
-        fname = lab.write_data_to_file()
-        
-        with open(fname, "r") as f:
-            file_content = f.read()
+        data = lab.create_data()
+        file_content = lab.write_data_to_string()
+    
+        fname = lab.filename_gen.random
         message = f"### Running Experiment\n"
         for k,v in lab.metadata.items():
             message += f"####{k} = {v}\n"
         message += f"#### File created = {fname}\n"
-
+    
         download_button = mo.download(
             file_content,
             filename=fname,
             label=f"Download {fname}",
         )
-
+    
         plot = cek.plotting()
-        data,_,_ = lab.read_data_file(fname)
-        plot.quick_plot(data,output=fname.replace(".csv",".png"))
-        image = mo.image(fname.replace(".csv",".png"),width=500)
-        
-    mo.vstack([mo.md(message),download_button,image])
+        image = plot.quick_plot(scatter=data,output="marimo")
+    
+    mo.hstack([mo.vstack([mo.md(message),download_button]),image])
     return (
         data,
         download_button,

@@ -56,6 +56,8 @@ class plotting():
         # Show the plot
         if output is None:
             plt.show()
+        elif output == "marimo":
+            return plt.gcf()
         else:
             plt.savefig(output)
         plt.close()

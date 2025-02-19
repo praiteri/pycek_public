@@ -113,5 +113,5 @@ class bomb_calorimetry(cek.cek_labs):
         y = self._round_values(y)
         self.data = np.column_stack((x,y))
 
-        return
+        return self.data
 
