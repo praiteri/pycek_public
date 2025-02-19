@@ -16,7 +16,8 @@ class crystal_violet(cek.cek_labs):
         self.expt_time = 1000
         self.number_of_values = 501
         self.noise_level = 0.1
-        self.precision = 4
+        self.precision = 6
+        self.background = 0.01
         
         self.activation_energy = 63e3 # J/mol
         self.prefactor = 5.9e9 # 1/M/s
@@ -68,7 +69,7 @@ class crystal_violet(cek.cek_labs):
                 xspacing = 'linear',
                 noise_level = self.noise_level,
                 positive = True,
-                background = 0.1
+                background = self.background,
                 )
         
         return 

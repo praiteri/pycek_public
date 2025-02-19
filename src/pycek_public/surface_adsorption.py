@@ -25,7 +25,7 @@ class surface_adsorption(cek.cek_labs):
             }
 
         self.number_of_values = 100 
-        self.noise_level = 1e-6
+        self.noise_level = 0.5e-5
         self.precision = 10
 
     def create_data(self):
@@ -38,7 +38,7 @@ class surface_adsorption(cek.cek_labs):
             )
 
         self.add_metadata(**{
-            "Temperature (K)"    : self.temperature,
+            "Temperature (C)"    : self.temperature - 273.15,
             "Volume (L)"         : self.volume,
             "Molar mass (g/mol)" : self.sample_parameters["molarMass"],
             "MinDye (mg)"        : self.minDye,
@@ -65,19 +65,6 @@ class surface_adsorption(cek.cek_labs):
                 )
             
         self.data[:,0] *= conversion_factor
-        # grams of dye added
-        # x = np.linspace(self.minDye, self.maxDye, self.number_of_values) / 1000
-        # moles = x / self.params["molarMass"] # g
-        # initial_concentration = moles / self.volume # mol/L
-        # y = self.measure(K, self.params["Q"], initial_concentration)
-        
-        # # Because noise is added to the concentration in solution, but
-        # # the concentration on the surface is required in post-processing, which 
-        # # is very small, we divide by 1000
-
-        # y = cek.add_noise(y, self.uncertainty/1000)
-
-        # data_array = np.column_stack((x, y))
 
         return self.data
 

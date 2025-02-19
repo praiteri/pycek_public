@@ -19,7 +19,7 @@ class cek_labs(ABC):
         self.NA = 6.022e23
         self.temperature = 298
 
-        self.number_of_values = 100
+        self.number_of_values = 10
         self.output_file = None
         self.filename_gen = cek.TempFilenameGenerator()
 
@@ -29,6 +29,7 @@ class cek_labs(ABC):
             'output_file' : self.output_file,
         })
         
+        self.make_plots = False
         self.logger_level = "ERROR"
 
         # Define some lab specific parameters
@@ -50,6 +51,8 @@ class cek_labs(ABC):
         # Lab specific parameters
         self.setup_lab()
 
+        self.list_of_data_files = []
+
     def __str__(self):
         return f'CHEM2000 Lab: {self.__class__.__name__}'
 
@@ -57,6 +60,7 @@ class cek_labs(ABC):
         if isinstance(student_ID,int):
             self.student_ID = student_ID
         elif isinstance(student_ID,str):
+            student_ID = student_ID.strip()
             if student_ID.isdigit():
                 self.student_ID = int(student_ID)
             else:
@@ -65,7 +69,7 @@ class cek_labs(ABC):
             raise ValueError("student_ID must be an integer")
         np.random.seed(self.student_ID)
         self.update_metadata_from_attr()
-        self.logger.debug(f"Initial seed = {np.random.get_state()[1][0]}")
+        self.logger.critical(f"Initial seed = {np.random.get_state()[1][0]}")
 
     def set_token(self, token):
         self.token = token
@@ -181,6 +185,8 @@ class cek_labs(ABC):
         # Write the kwargs as metadata
         self.write_metadata(filename)
 
+        self.list_of_data_files.append( filename )
+
         return filename
 
     def read_data_file(self,filename=None):
@@ -226,17 +232,36 @@ class cek_labs(ABC):
                 key = key.replace("#","").strip()
                 metadata[key.strip()] = value.strip()
 
+        self.logger.debug("-"*50)
+        for k,v in metadata.items():
+            self.logger.debug(f"{k} = {v}")
+        self.logger.debug("-"*50)
         # Output results
         # print("Comments:")
         # print("\n".join(comments))
         # print("\nExtracted Data:")
         # print(data_array)
         return data_array, header, metadata
+    
+    def _cleanup(self, pattern=None):
+        from pathlib import Path
+        for ff in self.list_of_data_files:
+            # Check if file exists before deleting
+            file_path = Path(ff)
+            if file_path.exists():
+                file_path.unlink()
+            else:
+                print("The file does not exist")
 
-    def process_file(self, filename=None):
-        self.read_data(filename)
-        result = self.process_data()
-        return result
+        # Delete multiple files using a pattern
+        if pattern is not None:
+            for file_path in Path('.').glob(pattern):
+                file_path.unlink()
+
+    # def process_file(self, filename=None):
+    #     self.read_data(filename)
+    #     result = self.process_data()
+    #     return result
     
     def _valid_ID(self,ID):
         if ID in ["23745411"]:
@@ -355,7 +380,8 @@ class cek_labs(ABC):
             y += self._generate_noise(nvalues,noise_level)
         
         if positive:
-            y = np.abs(y)
+            eps = np.power(10.,-self.precision)
+            y = [ max(eps,np.abs(x)) for x in y ]
 
         # Note: weights parameter is currently unused
         if weights is not None:

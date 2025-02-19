@@ -18,6 +18,7 @@ class bomb_calorimetry(cek.cek_labs):
         self.relaxation_time = 3
         self.number_of_values = 100
         self.noise_level = 0.1
+        self.precision = 2
 
         self.slope_before = np.random.uniform(0., self.noise_level) / 3
         self.slope_after = np.random.uniform(0., self.noise_level) / 3
@@ -97,6 +98,8 @@ class bomb_calorimetry(cek.cek_labs):
         x = np.linspace(0, self.number_of_values, self.number_of_values)
         y = np.random.normal(0, self.noise_level, self.number_of_values)
 
+        x = self._round_values(x,precision=0)
+
         dd = 0.
         T = self.temperature
         for i in range(self.number_of_values):
@@ -107,6 +110,7 @@ class bomb_calorimetry(cek.cek_labs):
                 dd = deltaT * (1 - np.exp( - (i - self.ignition_time) / self.relaxation_time) )
             y[i] += T + dd 
 
+        y = self._round_values(y)
         self.data = np.column_stack((x,y))
 
         return
