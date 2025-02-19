@@ -42,13 +42,14 @@ def _(mo):
 def _(lab, mo):
     def set_ID(value):
         try:
-            student_number = int(value)
+            student_number = int(value.strip())
             if student_number <= 0:
                 print(mo.md(f"### Invalid Student ID: {student_ID.value}"))
             else:
                 print(f"Valid Student ID: {student_number}")
                 lab.set_student_ID(int(value))
         except ValueError:
+            mo.stop(not student_ID.value.isdigit(), mo.md(f"### Invalid Student ID: {student_ID.value}"))
             print(mo.md(f"### Invalid Student ID: {student_ID.value}"))
 
     student_ID = mo.ui.text(value="", label="Student ID:",on_change=set_ID)
@@ -90,10 +91,9 @@ def _(cek, lab, mo, reset_button, run_button, sample_selector, student_ID):
     message = ""
     download_button = ""
     if run_button.value:
-        mo.stop(not student_ID.value.isdigit(), mo.md(f"### Invalid Student ID: {student_ID.value}"))
         mo.stop(sample_selector.value is None, mo.md(f"### No sample selected !!"))
 
-        lab.set_parameters(sample=sample_selector.value)
+        lab.set_parameters(sample=sample_selector.value,precision=0.01)
         _ = lab.create_data()
         fname = lab.write_data_to_file()
         
