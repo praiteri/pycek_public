@@ -160,36 +160,39 @@ class cek_labs(ABC):
             filename = self.output_file
         self.add_metadata(output_file=filename)
 
+        string = self.write_data_to_string(**kwargs)
         with open(filename, 'w') as f:
-            # Write the column names
-            cols = None
-            if "columns" in kwargs:
-                cols = kwargs["columns"]
-            elif "columns" in self.metadata:
-                cols = self.metadata["columns" ]
-            if cols is not None:
-                f.write(",".join(cols) + "\n")
-
-            # Convert NumPy array to list if needed
-            # if isinstance(self.data, np.ndarray):
-            #     self.data = self.data.tolist()
-
-            # Write data
-            for row in self.data:
-                # Handle multiple columns
-                if isinstance(row, (list, tuple, np.ndarray)):
-                    line = ",".join(map(str, row))
-                # Handle single-column case
-                else:
-                    line = str(row)
-                f.write(line + "\n")
-
-        # Write the kwargs as metadata
-        self.write_metadata(filename)
+            f.write(string)
 
         self.list_of_data_files.append( filename )
 
         return filename
+
+    def write_data_to_string(self,**kwargs):
+        if "columns" in kwargs:
+            string = ",".join(kwargs["columns"]) + "\n"
+        elif "columns" in self.metadata:
+            string = ",".join(self.metadata["columns"]) + "\n"
+        else:
+            string = ""
+
+        # Write data
+        for row in self.data:
+            # Handle multiple columns
+            if isinstance(row, (list, tuple, np.ndarray)):
+                string += ",".join(map(str, row))+"\n"
+            # Handle single-column case
+            else:
+                string += str(row)+"\n"
+
+        # Write metadata
+        for key, value in self.metadata.items():
+            s = f"{key}"
+            s = s.replace("_"," ")
+            s = s[0].upper() + s[1:] + f" = {value}"
+            string += f"# {s}\n"
+
+        return string
 
     def read_data_file(self,filename=None):
         if filename is None:

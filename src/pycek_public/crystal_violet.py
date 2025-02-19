@@ -72,5 +72,5 @@ class crystal_violet(cek.cek_labs):
                 background = self.background,
                 )
         
-        return 
+        return self.data
     

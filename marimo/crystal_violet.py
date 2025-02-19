@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.11.0"
+__generated_with = "0.11.2"
 app = marimo.App(width="medium")
 
 
@@ -46,21 +46,22 @@ def _(mo):
 @app.cell
 def _(lab, mo):
     def set_ID(value):
-    try:
-        student_number = int(value.strip())
-        if student_number <= 0:
+        try:
+            student_number = int(value.strip())
+            if student_number <= 0:
+                print(mo.md(f"### Invalid Student ID: {student_ID.value}"))
+            else:
+                print(f"Valid Student ID: {student_number}")
+                lab.set_student_ID(int(value))
+        except ValueError:
+            mo.stop(not student_ID.value.isdigit(), mo.md(f"### Invalid Student ID: {student_ID.value}"))
             print(mo.md(f"### Invalid Student ID: {student_ID.value}"))
-        else:
-            print(f"Valid Student ID: {student_number}")
-            lab.set_student_ID(int(value))
-    except ValueError:
-        mo.stop(not student_ID.value.isdigit(), mo.md(f"### Invalid Student ID: {student_ID.value}"))
-        print(mo.md(f"### Invalid Student ID: {student_ID.value}"))
 
     student_ID = mo.ui.text(value="", label="Student ID:",on_change=set_ID)
 
     def set_fname(value):
         lab._set_filename(value)
+        
     exp_ID = mo.ui.text(value="Automatic", label="Output file:", on_change=set_fname)
 
     cv_volume = mo.ui.number(start=0,stop=100,step=1,value=None,label="Volume of CV solution (mL)")
@@ -104,7 +105,6 @@ def _(
     oh_volume,
     reset_button,
     run_button,
-    student_ID,
     temperature,
 ):
     if reset_button.value:
@@ -123,11 +123,10 @@ def _(
             volumes={'cv': cv_vol, 'oh': oh_vol, 'h2o': h2o_vol},
             temperature=temperature.value+273.15
         )
-        _ = lab.create_data()
-        fname = lab.write_data_to_file()
-        
-        with open(fname, "r") as f:
-            file_content = f.read()
+        data = lab.create_data()
+        file_content = lab.write_data_to_string()
+
+        fname = lab.filename_gen.random
         message = f"### Running Experiment\n"
         for k,v in lab.metadata.items():
             message += f"####{k} = {v}\n"
@@ -140,16 +139,13 @@ def _(
         )
 
         plot = cek.plotting()
-        data,_,_ = lab.read_data_file(fname)
-        plot.quick_plot(data,output=fname.replace(".csv",".png"))
-        image = mo.image(fname.replace(".csv",".png"),width=500)
-        
-    mo.vstack([mo.md(message),download_button,image])
+        image = plot.quick_plot(scatter=data,output="marimo")
+
+    mo.hstack([mo.vstack([mo.md(message),download_button]),image])
     return (
         cv_vol,
         data,
         download_button,
-        f,
         file_content,
         fname,
         h2o_vol,

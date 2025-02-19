@@ -100,11 +100,10 @@ def _(cek, lab, mo, reset_button, run_button, sample_selector):
             number_of_values = 12,
             sample=sample_selector.value
         )
-        _ = lab.create_data()
-        fname = lab.write_data_to_file()
+        data = lab.create_data()
+        file_content = lab.write_data_to_string()
 
-        with open(fname, "r") as f:
-            file_content = f.read()
+        fname = lab.filename_gen.random
         message = f"### Running Experiment\n"
         for k,v in lab.metadata.items():
             message += f"####{k} = {v}\n"
@@ -117,11 +116,9 @@ def _(cek, lab, mo, reset_button, run_button, sample_selector):
         )
 
         plot = cek.plotting()
-        data,_,_ = lab.read_data_file(fname)
-        plot.quick_plot(data,output=fname.replace(".csv",".png"))
-        image = mo.image(fname.replace(".csv",".png"),width=500)
+        image = plot.quick_plot(scatter=data,output="marimo")
 
-    mo.vstack([mo.md(message),download_button,image])
+    mo.hstack([mo.vstack([mo.md(message),download_button]),image])
     return (
         data,
         download_button,
