@@ -11,6 +11,8 @@ class stats_lab(cek.cek_labs):
                           columns = ["X","Y"]
                           )
 
+        self.number_of_values = 10
+
         self.available_samples = [
             'Averages',
             'Propagation of uncertainty',
@@ -25,7 +27,8 @@ class stats_lab(cek.cek_labs):
                 (1.0, 0.1),
                 (12., 2.0)
             ],
-            'exp_values' : (1.0,9.0),
+            'exp_values' : (1.0,10.0),
+            "precision" : 3,
             }
         
         self.sample_parameters['Propagation of uncertainty'] = {
@@ -33,6 +36,7 @@ class stats_lab(cek.cek_labs):
                 (15.0, 1.0),
                 (133., 2.0)
             ],
+            "precision" : 3,
             }
 
         self.sample_parameters['Comparison of averages'] = {
@@ -40,19 +44,23 @@ class stats_lab(cek.cek_labs):
                 (15.0, 1.0),
                 (13.2, 2.0)
             ],
+            "precision" : 3,
             }
 
         self.sample_parameters['Linear fit'] = {
             "function" : lambda x,m,q: m*x + q, 
             "gen_values" : {'m':12.3 , 'q':1.0},
-            "xrange" : [0.0 , 10.0]
+            "xrange" : [0.0 , 10.0],
+            "exp_values" : 11.3,
+            "precision" : 3,
             }
 
         self.sample_parameters['Non linear fit'] = {
             "nval" : 10,
             "function" : lambda x,E0,K0,Kp,V0:  E0 + K0 * x / Kp * ( (V0/x)**Kp / (Kp-1)+1) - K0*V0/(Kp-1), 
             "gen_values" : {"E0":-634.2, "K0":12.43, "Kp":4.28, "V0":99.11},
-            "xrange" : [50 , 140]
+            "xrange" : [50 , 140],
+            "precision" : 3,
         }
         
         self.sample_parameters['Detection of outliers'] = {
@@ -60,6 +68,7 @@ class stats_lab(cek.cek_labs):
             "gen_values" : {'m':2.3 , 'q':0.1},
             "xrange" : [10.0 , 20.0],
             "shift" : 2,
+            "precision" : 3,
             }
         
     def create_data(self):
@@ -75,6 +84,9 @@ class stats_lab(cek.cek_labs):
             number_of_values = self.number_of_values,
             )
         
+        if "precision" in prm:
+            self.set_parameters( precision = prm["precision"] )
+
         if "noise" in prm:
             self.set_parameters( noise_level = prm["noise"] )
 
@@ -87,6 +99,8 @@ class stats_lab(cek.cek_labs):
             data = self._generate_normal_random(self.number_of_values, prm['gen_values'])
 
         elif self.sample in ["Linear fit"]:
+            self.noise_level = 5
+
             data = self.generate_data_from_function(
                 prm["function"], 
                 prm['gen_values'], 
@@ -96,6 +110,8 @@ class stats_lab(cek.cek_labs):
                 )
 
         elif self.sample in ["Non linear fit"]:
+            self.noise_level = 5
+
             data = self.generate_data_from_function(
                 prm["function"], 
                 prm['gen_values'], 
@@ -114,7 +130,6 @@ class stats_lab(cek.cek_labs):
                 )
             i = np.random.randint(self.number_of_values)
             data[i,1] += prm['shift']
-
 
         self.data = data
         return data            

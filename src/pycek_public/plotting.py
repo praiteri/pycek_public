@@ -27,8 +27,21 @@ class plotting():
             line = [line]
 
         # Plot the observed data points as a scatter plot
+        idx = 0
         for ds in scatter:
-            plt.scatter(ds[:,0],ds[:,1], color='blue', label='Data')
+            if ds is not None:
+                plt.scatter(ds[:,0],ds[:,1],label="Data "+str(idx)),
+                idx += 1
+            #     ymin = np.min(ds[:,1] - 0.1*np.abs(np.min(ds[:,1])))
+            #     ymax = np.max(ds[:,1] + 0.1*np.abs(np.max(ds[:,1])))
+            
+            # ax = plt.gca()        
+            # ax.set_ylim([ymin, ymax])
+
+        for ds in line:
+            if ds is not None:
+                plt.plot(ds[:,0],ds[:,1],color='red',label="Data "+str(idx)),
+                idx += 1
 
         # Add labels and title to the plot
         plt.xlabel(columns[0])
