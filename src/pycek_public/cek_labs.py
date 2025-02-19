@@ -1,5 +1,7 @@
 import pycek_public as cek
 import numpy as np
+from typing import Callable, Dict, Optional, Union, Tuple
+
 from collections import OrderedDict
 
 from abc import ABC, abstractmethod
@@ -271,9 +273,17 @@ class cek_labs(ABC):
     def _round_values(self, values, precision=None):
         if precision is None:
             precision = self.precision
-        rounded_values = [round(v, precision) for v in values]
-        values = np.array(rounded_values, dtype=float)
-        return values
+
+        # Convert precision to integer if it's a float
+        if isinstance(precision, float):
+            if precision >= 0:
+                precision = int(precision)
+            else:
+                precision = int(-np.log10(precision))
+        elif not isinstance(precision, (int, type(None))):
+            raise TypeError(f"Precision must be an integer or float, got {type(precision)}")
+
+        return np.round(values, decimals=precision)
     
     def _generate_uniform_random(self, lower, upper, n):
         return self._round_values(np.random.uniform(lower, upper, n))
@@ -302,9 +312,6 @@ class cek_labs(ABC):
         y = func(x, *params) + self._generate_noise(nvalues)
         y = self._round_values(y)
         return np.column_stack((x,y))
-
-    import numpy as np
-    from typing import Callable, Dict, Optional, Union, Tuple
 
     def generate_data_from_function(
         self,

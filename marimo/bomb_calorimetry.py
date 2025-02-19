@@ -82,7 +82,7 @@ def _(lab, mo):
 
 
 @app.cell
-def _(cek, lab, mo, reset_button, run_button, sample_selector, student_ID):
+def _(cek, lab, mo, reset_button, run_button, sample_selector):
     if reset_button.value:
         lab.ID = 0
         lab._set_filename(None)
@@ -93,10 +93,10 @@ def _(cek, lab, mo, reset_button, run_button, sample_selector, student_ID):
     if run_button.value:
         mo.stop(sample_selector.value is None, mo.md(f"### No sample selected !!"))
 
-        lab.set_parameters(sample=sample_selector.value,precision=0.01)
+        lab.set_parameters(sample=sample_selector.value)
         _ = lab.create_data()
         fname = lab.write_data_to_file()
-        
+
         with open(fname, "r") as f:
             file_content = f.read()
         message = f"### Running Experiment\n"
@@ -114,7 +114,7 @@ def _(cek, lab, mo, reset_button, run_button, sample_selector, student_ID):
         data,_,_ = lab.read_data_file(fname)
         plot.quick_plot(data,output=fname.replace(".csv",".png"))
         image = mo.image(fname.replace(".csv",".png"),width=500)
-        
+
     mo.vstack([mo.md(message),download_button,image])
     return (
         data,
