@@ -1,4 +1,5 @@
 FROM python:3.12-slim as builder
+ENV UV_SYSTEM_PYTHON=1
 COPY --from=ghcr.io/astral-sh/uv:0.4.20 /uv /bin/uv
 COPY ./deployment/requirements.txt requirements.txt
 RUN uv pip install -r requirements.txt \
