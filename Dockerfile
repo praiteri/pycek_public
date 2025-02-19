@@ -5,10 +5,12 @@ ENV PATH="/home/user/.local/bin:$PATH"
 
 ENV UV_SYSTEM_PYTHON=1
 WORKDIR /app
+COPY --chown=user ./deployment/requirements.txt requirements.txt
+RUN uv pip install -r requirements.txt
 
 # Copy and install the local repo, then remove it
-RUN uv pip install git+https://github.com/praiteri/pycek_public
-RUN uv pip install marimo fastapi colorama
+COPY --chown=user ./ /pycek_public
+RUN uv pip install /pycek_public && rm -rf /pycek_public
 COPY --chown=user ./marimo /app
 RUN chown -R user:user /app
 USER user
