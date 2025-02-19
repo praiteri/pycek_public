@@ -93,7 +93,7 @@ def _(cek, lab, mo, reset_button, run_button, sample_selector, student_ID):
         mo.stop(not student_ID.value.isdigit(), mo.md(f"### Invalid Student ID: {student_ID.value}"))
         mo.stop(sample_selector.value is None, mo.md(f"### No sample selected !!"))
 
-        lab.set_parameters(sample=sample_selector.value,precision=0.01)
+        lab.set_parameters(sample=sample_selector.value)
         _ = lab.create_data()
         fname = lab.write_data_to_file()
         
