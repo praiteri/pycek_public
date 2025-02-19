@@ -3,7 +3,6 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 import marimo
 from fastapi import FastAPI, Form, Request, Response
 import os
-work_dir = os.environ.get('PYCEK_WORKDIR', '/tmp/')
 
 # Create a marimo asgi app
 server = (
@@ -23,6 +22,4 @@ app.mount("/", server.build())
 # Run the server
 if __name__ == "__main__":
     import uvicorn
-    os.chdir(work_dir)
-
     uvicorn.run(app, host="0.0.0.0", port=8000)
