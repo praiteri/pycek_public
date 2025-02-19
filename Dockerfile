@@ -1,4 +1,6 @@
 FROM python:3.12-slim as builder
+RUN useradd -m -u 1000 user
+USER user
 ENV UV_SYSTEM_PYTHON=1
 COPY --from=ghcr.io/astral-sh/uv:0.4.20 /uv /bin/uv
 COPY ./deployment/requirements.txt requirements.txt
@@ -19,6 +21,5 @@ COPY --chown=user ./marimo /app
 RUN chown -R user:user /app
 USER user
 
-ENV PYCEK_WORKDIR="/data"
 WORKDIR /app
 CMD ["python", "app.py"]
