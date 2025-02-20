@@ -28,7 +28,7 @@ marimo_server = (
 @app.get("/download-pdf/{pdf_name}")
 async def download_pdf(pdf_name: str):
     # Assuming PDFs are stored in a 'pdfs' directory
-    pdf_path = f"./pdfs/{pdf_name}"
+    pdf_path = f"../pdfs/{pdf_name}"
 
     if os.path.exists(pdf_path):
         return FileResponse(
@@ -60,5 +60,5 @@ app.mount("", marimo_server.build())
 # Run the server
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=2718)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
 
