@@ -28,7 +28,7 @@ marimo_server = (
 @app.get("/download-pdf/{pdf_name}")
 async def download_pdf(pdf_name: str):
     # Assuming PDFs are stored in a 'pdfs' directory
-    pdf_path = f"../pdfs/{pdf_name}"
+    pdf_path = f"./pdfs/{pdf_name}"
 
     if os.path.exists(pdf_path):
         return FileResponse(
