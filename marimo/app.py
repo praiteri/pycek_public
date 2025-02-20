@@ -41,7 +41,7 @@ async def download_pdf(pdf_name: str):
 # Create a route to display a pdf
 @app.get("/pdf/direct/{pdf_name}")
 async def get_pdf_direct(pdf_name: str):
-    pdf_path = Path(f"../pdfs/{pdf_name}")
+    pdf_path = Path(f"./pdfs/{pdf_name}")
 
     if not pdf_path.exists():
         raise HTTPException(status_code=404, detail=f"PDF not found {pdf_path}")
