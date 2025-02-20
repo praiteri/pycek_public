@@ -16,7 +16,7 @@ def _():
 def _(mo):
     mo.md(
         """
-        # Crystdal Violet Lab
+        # Crystal Violet Lab
 
         This notebook mimics a kinetics laboratory experiment, where a UV-Vis spectrophotometer is used to measure the absorbance as the reaction between crystal violet and hydroxide proceeds. 
         The absorbance versus time data can then be used to determine the rate of the reaction with respect to both crystal violet and hydroxide ions.
