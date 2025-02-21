@@ -7,7 +7,7 @@ app = marimo.App(width="medium")
 @app.cell
 def _():
     import marimo as mo
-    import pycek_public as cek
+    import pycek as cek
     lab = cek.cek.surface_adsorption(make_plots=True)
     return cek, lab, mo
 
