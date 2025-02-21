@@ -73,6 +73,9 @@ class cek_labs(ABC):
         self.update_metadata_from_attr()
         self.logger.critical(f"Initial seed = {np.random.get_state()[1][0]}")
 
+    def reset(self):
+        np.random.seed(self.student_ID)
+
     def set_token(self, token):
         self.token = token
         #print(f"Check: {self._check_token()}")

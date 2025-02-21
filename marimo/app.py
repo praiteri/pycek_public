@@ -21,6 +21,7 @@ marimo_server = (
     .with_app(path="/bc", root="./bomb_calorimetry.py")
     .with_app(path="/cv", root="./crystal_violet.py")
     .with_app(path="/stats", root="./statistics_lab.py")
+    .with_app(path="/eq", root="./equilibrium.py")
     .with_app(path="/surface", root="./surface_adsorption.py")
 )
 
@@ -37,21 +38,6 @@ async def download_pdf(pdf_name: str):
             filename=pdf_name
         )
     return {"error": f"PDF not found [../pdfs/{pdf_name}]"}, 404
-
-# Create a route to display a pdf
-@app.get("/pdf/direct/{pdf_name}")
-async def get_pdf_direct(pdf_name: str):
-    pdf_path = Path(f"./pdfs/{pdf_name}")
-
-    if not pdf_path.exists():
-        raise HTTPException(status_code=404, detail=f"PDF not found {pdf_path}")
-
-    return FileResponse(
-        path=pdf_path,
-        media_type="application/pdf",
-        filename=pdf_name + ".pdf"
-    )
-
 
 # Mount the marimo server at the root
 # This will handle all the routes defined in the marimo server

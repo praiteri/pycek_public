@@ -7,7 +7,7 @@ app = marimo.App(width="medium")
 @app.cell
 def _():
     import marimo as mo
-    import pycek_public as cek
+    import pycek as cek
     lab = cek.bomb_calorimetry(make_plots=True)
     return cek, lab, mo
 
@@ -95,7 +95,6 @@ def _(cek, lab, mo, reset_button, run_button, sample_selector):
 
         lab.set_parameters(sample=sample_selector.value)
         data = lab.create_data()
-        print(data)
         file_content = lab.write_data_to_string()
 
         fname = lab.filename_gen.random
@@ -111,7 +110,6 @@ def _(cek, lab, mo, reset_button, run_button, sample_selector):
         )
 
         plot = cek.plotting()
-        print(data)
         image = plot.quick_plot(scatter=data,output="marimo")
 
     mo.hstack([mo.vstack([mo.md(message),download_button]),image])
