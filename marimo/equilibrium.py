@@ -19,22 +19,20 @@ def _():
 
 
 @app.cell
-def _(nspecies):
+def _(mo, nspecies):
     species = [chr(i) for i in range(65, 65 + nspecies.value)]
-    return (species,)
-
-
-@app.cell
-def _(mo, species):
+    def_nu = { s:1 for s in species }
+    def_cc = { s:0.1 for s in species }
+    def_nu["A"] = -1
     ss = [ mo.ui.text(value=s) for s in species]
     compounds = mo.ui.array([ *ss ],label=f"Species Names")
 
-    nn = [ mo.ui.number(-5,5,value=1,label=f"{s}") for s in species]
+    nn = [ mo.ui.number(-5,5,value=def_nu[s],label=f"{s}") for s in species]
     stoichiometry = mo.ui.array([
            *nn,
     ],label=f"Stiochiometric coefficients")
 
-    cc = [ mo.ui.number(-5,5,0.01,value=1,label=f"{s}") for s in species]
+    cc = [ mo.ui.text(value=str(def_cc[s]),label=f"{s}") for s in species]
     concentrations = mo.ui.array([
            *cc,
     ],label=f"Initial concentrations")
@@ -42,23 +40,44 @@ def _(mo, species):
     mo.hstack([
         compounds,stoichiometry,concentrations
     ],align="start",justify="space-around")
-
-    return cc, compounds, concentrations, nn, ss, stoichiometry
+    return (
+        cc,
+        compounds,
+        concentrations,
+        def_cc,
+        def_nu,
+        nn,
+        species,
+        ss,
+        stoichiometry,
+    )
 
 
 @app.cell
 def _(compounds, mo, stoichiometry):
     nu = stoichiometry.value
     _tex = ""
-    for i,xs in enumerate(compounds.value):
+
+    def format_tex(s):
+        for c in ["3+", "2+", "+", "-", "2-", "3-"]:
+            s = s.replace(c, f"^{{{c}}}")
+        return s
+
+    for i, xs in enumerate(compounds.value):
+        formatted_xs = format_tex(xs)
         if nu[i] < 0:
-            _tex += f"\\mathrm{{{abs(nu[i])}{xs}}} + " if nu[i] < -1 else f"\\mathrm{{{xs}}} + "
+            _tex += f"\\mathrm{{{abs(nu[i])}{formatted_xs}}} + " if nu[i] < -1 else f"\\mathrm{{{formatted_xs}}} + "
+
     _tex = _tex.strip().rstrip('+')
-    _tex += "\\rightleftharpoons"
-    for i,xs in enumerate(compounds.value):
+    _tex += " \\rightleftharpoons "
+
+    for i, xs in enumerate(compounds.value):
+        formatted_xs = format_tex(xs)
         if nu[i] > 0:
-            _tex += f"\\mathrm{{{nu[i]}{xs}}} + " if nu[i] > 1 else f"\\mathrm{{{xs}}} + "
+            _tex += f"\\mathrm{{{nu[i]}{formatted_xs}}} + " if nu[i] > 1 else f"\\mathrm{{{formatted_xs}}} + "
+
     _tex = _tex.strip().rstrip('+')
+
 
     keq = mo.ui.text(value="12",label="$K_{eq}$")
 
@@ -78,70 +97,75 @@ def _(compounds, mo, stoichiometry):
         )
 
     mo.hstack([a,b],align="start",justify="space-around")
-
-    return a, b, i, keq, nu, xs
+    return a, b, format_tex, formatted_xs, i, keq, nu, xs
 
 
 @app.cell
 def _(mo, np):
     step = mo.ui.slider(steps=np.logspace(-8,0,90),label="$\delta c$",show_value=True)
     tol = mo.ui.slider(steps=np.logspace(-8,0,90),label="Convergence Threshold",show_value=True)
+    max_iterations = mo.ui.slider(steps=np.logspace(2,10,90),label="Max Iterations",show_value=True)
 
+    check_0 = mo.ui.checkbox(label= "opt 0",)
+    check_1 = mo.ui.checkbox(label= f"Decrease $\delta c$",)
+    check_2 = mo.ui.checkbox(label= f"Increase $\delta c$",)
+    check_3 = mo.ui.checkbox(label= f"Positive [C]",)
     mo.vstack([
         mo.md("##**Optimisation parameters**").center(),
+        mo.hstack([check_1,check_2,check_3],align="start",justify="space-around"),
         mo.hstack([
-        step, 
-        tol,]
+            step, 
+            max_iterations,
+            tol,]
         ,align="start",justify="space-around")
     ])
-    
-    return step, tol
+    return check_0, check_1, check_2, check_3, max_iterations, step, tol
 
 
 @app.cell
-def _(np):
+def _(check_3, np):
     def compute_Q(conc,stoich):
         Q = 1
-        for i in range(len(conc)):
-            Q *= conc[i]**stoich[i]
+        for c, s in zip(conc, stoich):
+            if c == 0 and s < 0: 
+                return None
+            Q *= c**s
         return Q
 
     def compute_force(conc,stoich,pkeq):
         Q = compute_Q(conc,stoich)
-        return -np.log10(Q) - pkeq
+        if Q is None: # Conc of at least one reactant is zero
+            return -1
+        elif Q == 0: # Conc of at least one product is zero
+            return 1
+        else:
+            return -np.log10(Q) - pkeq 
 
     def update_concentrations(conc,stoich,force,dc):
-        ctmp = np.zeros(len(conc))
-        for i in range(len(conc)):
-            ctmp[i] = conc[i] +dc*stoich[i]*force
-        return ctmp
-
-    def solve_analytic(conc,keq):
-        """
-        (b+x) / (a-2x)**2 = c
-        """
-        a = conc["A"]
-        b = conc["B"]
-        c = keq
-        x0 = (-np.sqrt(8*a*c + 16*b*c + 1) + 4*a*c + 1)/(8*c)
-        x1 = (np.sqrt(8*a*c + 16*b*c + 1) + 4*a*c + 1)/(8*c)
-        return x0,x1
-    return compute_Q, compute_force, solve_analytic, update_concentrations
+        if check_3.value:
+            for i in range(5):
+                ctmp = conc +dc*stoich*force
+                if all(ctmp > 0):
+                    return ctmp, dc
+                dc /= 2
+        else:
+            ctmp = conc +dc*stoich*force
+        return ctmp, dc
+    return compute_Q, compute_force, update_concentrations
 
 
 @app.cell
 def _(
     Dict,
-    List,
     NDArray,
-    compute_Q,
+    check_1,
+    check_2,
     compute_force,
     np,
     plt,
     update_concentrations,
 ):
     def solve_equilibrium(
-        species: List,
         initial_conc: Dict[str, float],
         stoichiometry: Dict[str, float],
         pK_eq: float,
@@ -164,39 +188,48 @@ def _(
             NDArray: Array with columns [iteration, conc_A, conc_B, force]
         """
         # Initialize arrays to store results
-        ns = len(species)
+        ns = len(initial_conc)
 
         conc = np.zeros(shape=(max_iterations + 1, ns))
         forces = np.zeros(shape=(max_iterations + 1,1))
+        delta = np.zeros(shape=(max_iterations + 1,1))
 
         # Set initial values
         conc[0,:] = np.array(initial_conc)
         forces[0] = compute_force(conc[0,:], stoichiometry, pK_eq)
+        delta[0] = dc
 
         # Iterate until convergence or max iterations
         for i in range(max_iterations):
             # Update values
-            conc[i+1,:] = update_concentrations(conc[i,:], stoichiometry, forces[i,0], dc)
+            conc[i+1,:] , dc = update_concentrations(conc[i,:], stoichiometry, forces[i,0], dc)
             forces[i+1] = compute_force(conc[i+1,:], stoichiometry, pK_eq)
-            if forces[i+1]*forces[i] < 0:
-                dc /=2
-            pQ = -np.log10(compute_Q(conc[i+1,:], stoichiometry))
+
+            if check_1.value and forces[i+1]*forces[i] < 0:
+                    dc /=2
+
+            if check_2.value and forces[i+1]*forces[i] > 0:
+                    dc *= 1.5
+
+            delta[i+1] = dc
 
             # Check convergence
-            # if np.isclose(pQ, pK_eq, rtol=rtol):
             if np.abs(forces[i+1]) < rtol:
                 # Trim unused array space if converged early
-                return conc[:i+2,:], forces[:i + 2]
+                return conc[:i+2,:], forces[:i + 2], delta[:i + 2]
 
         # Return all iterations if no convergence
-        return conc[:i+2,:], forces[:i + 2]
+        return conc[:i+2,:], forces[:i + 2], delta[:i + 2]
 
     def plot(x,data,labels=None,refs=None,log=False,axes=None):
         colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
         ncols = data.shape[1]
+        nrows = data.shape[0]
         plt.figure(figsize=(4,4))
         for i in range(ncols):
             plt.plot(x,data[:,i],label=labels[i],color=colors[i])
+            if nrows < 50:
+                plt.scatter(x,data[:,i],color=colors[i],s=20)
 
         if refs is not None:
             for i in range(len(refs)):
@@ -213,48 +246,59 @@ def _(
 
 
 @app.cell
-def _(compounds, keq, np, plot, solve_equilibrium, species, step, tol):
-    # conc = { s: float(conc_all[s].value) for s in species }
-    # stoich = { s: nu_all[s].value for s in species }
+def _(compounds, keq, max_iterations, np, plot, solve_equilibrium, step, tol):
     def execute(conc_list,stoich_list):
-        # conc_list = np.array([float(conc_all[s].value) for s in species])
-        # stoich_list = np.array([nu_all[s].value for s in species])
-
         pkeq = -np.log10(float(keq.value))
         dc = float(step.value)
         rtol = float(tol.value)
 
-        final_conc_list, forces = solve_equilibrium(
-            species,
-            conc_list,
-            stoich_list,
-            pkeq,dc,rtol,max_iterations=10000)
+        final_conc_list, forces, deltas = \
+            solve_equilibrium(
+                conc_list,
+                stoich_list,
+                pkeq,
+                dc,
+                rtol,
+                max_iterations=int(max_iterations.value))
 
         cycles = np.linspace(0,len(forces),len(forces))
-        # roots = solve_analytic(conc,float(keq.value))
-        # analytic_solution = [ data[0,1] + stoich["A"]*roots[0] , data[0,2] + stoich["B"]*roots[0] ]
 
-        plot_c = plot(cycles,final_conc_list,labels=compounds.value,axes=["Cycles","Concentration"])
+        logscale = False
+        if any(final_conc_list[-1,:] < 1e-2):
+            logscale = True
+        plot_c = plot(cycles,final_conc_list,labels=compounds.value,
+                      log=logscale,axes=["Cycles","Concentration"])
         plot_f = plot(
             cycles, np.abs(forces),
             labels=["Force"],refs=[rtol],log=True,axes=["Cycles","Force"])
+        plot_d = plot(
+            cycles, np.abs(deltas),
+            labels=[f"dc"],log=True,axes=["Cycles",f"dc"])
 
-        return final_conc_list, forces, plot_c, plot_f
+        return final_conc_list, forces, plot_c, plot_f ,plot_d
     return (execute,)
 
 
 @app.cell
-def _(concentrations, execute, mo, np, stoichiometry):
-    final_conc_list, forces, plot_c, plot_f = execute(
+def _(compute_Q, concentrations, execute, keq, mo, np, stoichiometry):
+    final_conc_list, forces, plot_c, plot_f, plot_d = execute(
         np.array(concentrations.value, dtype=float),
         np.array(stoichiometry.value,dtype=int)
     )
 
+    print(final_conc_list)
+    Q = compute_Q(final_conc_list[-1,:],np.array(stoichiometry.value,dtype=int))
+    K = float(keq.value)
+    if np.isclose(Q,K,rtol=1e-6):
+        mm = mo.md("##**Optimisation Achieved**")
+    else:
+        mm = mo.md("##**Optimisation Failed**")
+    
     mo.vstack([
-            mo.md("##**Optimisation Results**").center(),
-            mo.hstack([plot_c,plot_f],
+            mm.center(),
+            mo.hstack([plot_c,plot_f,plot_d],
     align="start", justify="space-around")])
-    return final_conc_list, forces, plot_c, plot_f
+    return K, Q, final_conc_list, forces, mm, plot_c, plot_d, plot_f
 
 
 @app.cell
@@ -290,7 +334,6 @@ def _(
         mo.md('##**Final conditions**').center(),
         mo.hstack([final_0,final_1],align="start",justify="space-between")
     ],justify="space-around")
-
     return final_0, final_1, stoich_list
 
 
