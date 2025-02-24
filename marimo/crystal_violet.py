@@ -7,7 +7,7 @@ app = marimo.App(width="medium")
 @app.cell
 def _():
     import marimo as mo
-    import pycek as cek
+    import pycek_public as cek
     lab = cek.crystal_violet(make_plots=True)
     return cek, lab, mo
 
