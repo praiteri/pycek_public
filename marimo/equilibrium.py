@@ -286,7 +286,6 @@ def _(compute_Q, concentrations, execute, keq, mo, np, stoichiometry):
         np.array(stoichiometry.value,dtype=int)
     )
 
-    print(final_conc_list)
     Q = compute_Q(final_conc_list[-1,:],np.array(stoichiometry.value,dtype=int))
     K = float(keq.value)
     if np.isclose(Q,K,rtol=1e-6):
