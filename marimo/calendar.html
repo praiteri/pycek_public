@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Calendar</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .calendar {
+            text-align: center;
+            width: 85%;
+            margin: 0 auto;
+        }
+        .week-item {
+            margin-bottom: 10px;
+            padding: 5px;
+            border-left: 3px solid #ddd;
+            padding-left: 10px;
+        }
+        .week-label {
+            font-weight: bold;
+        }
+        .intro {
+            color: olive;
+            font-weight: bold;
+        }
+        .lab {
+            color: blue;
+            font-weight: bold;
+        }
+        .drop-in {
+            color: orange;
+            font-weight: bold;
+        }
+        .none {
+            color: teal;
+            font-weight: bold;
+        }
+        .due-date {
+            color: red;
+            font-weight: bold;
+            display: block;
+            margin-top: 5px;
+        }
+        .assessment {
+            color: red;
+            font-weight: bold;
+        }
+        .holiday-list {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Calendar</h1>
+    
+    <div class="calendar">
+        <div class="week-item">
+            <span class="week-label">Week 1 – </span>
+            <span class="intro">Introduction and refresher of statistics</span>
+        </div>
+        
+        <div class="week-item">
+            <span class="week-label">Week 2 – </span>
+            <span class="lab">Basic statistics numerical laboratory</span>
+        </div>
+        
+        <div class="week-item">
+            <span class="week-label">Week 3 – </span>
+            <span class="drop-in">Drop-in session</span>
+        </div>
+        
+        <div class="week-item">
+            <span class="week-label">Week 4 – </span>
+            <span class="lab">Bomb calorimetry numerical laboratory</span>
+            <span class="due-date">First lab report due</span>
+        </div>
+        
+        <div class="week-item">
+            <span class="week-label">Week 5 – </span>
+            <span class="drop-in">Drop-in session</span>
+        </div>
+        
+        <div class="week-item">
+            <span class="week-label">Week 6 – </span>
+            <span class="none">No lab</span>
+            <span class="due-date">Second lab report due</span>
+        </div>
+        
+        <div class="week-item">
+            <span class="week-label">Week 7 – </span>
+            <span class="assessment">Progressive assessment</span>
+        </div>
+        
+        <div class="week-item">
+            <span class="week-label">Week 8 – </span>
+            <span class="lab">Crystal violet numerical laboratory</span>
+        </div>
+        
+        <div class="week-item">
+            <span class="week-label">Week 9 – </span>
+            <span style="font-weight: bold;">Tuition free week</span>
+        </div>
+        
+        <div class="week-item">
+            <span class="week-label">Week 10 – </span>
+            <span class="lab">Chemical equilibrium numerical laboratory</span>
+            <span class="due-date">Third lab report due</span>
+        </div>
+        
+        <div class="week-item">
+            <span class="week-label">Week 11 – </span>
+            <span class="drop-in">Drop-in session</span>
+        </div>
+        
+        <div class="week-item">
+            <span class="week-label">Week 12 – </span>
+            <span class="lab">Surface adsorption numerical laboratory</span>
+            <span class="due-date">Fourth lab report due</span>
+        </div>
+        
+        <div class="week-item">
+            <span class="week-label">Week 13 – </span>
+            <span class="drop-in">Drop-in session</span>
+        </div>
+        
+        <div class="week-item">
+            <span class="week-label">Week 14 – </span>
+            <span class="none">Study week</span>
+            <span class="due-date">Fifth lab report due</span>
+        </div>
+    </div>
+    
+    <h3>Public holidays</h3>
+    <ul class="holiday-list">
+        <li>2<sup>nd</sup> March – Labour Day</li>
+        <li>18<sup>th</sup> April – Good Friday</li>
+        <li>21<sup>st</sup> April – Easter Monday</li>
+        <li>22<sup>nd</sup> April – Easter Tuesday</li>
+        <li>25<sup>th</sup> April – Anzac Day</li>
+    </ul>
+</body>
+</html>
