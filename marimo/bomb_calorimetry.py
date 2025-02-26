@@ -8,6 +8,7 @@ app = marimo.App(width="medium")
 def _():
     import marimo as mo
     import pycek_public as cek
+
     lab = cek.bomb_calorimetry(make_plots=True)
     return cek, lab, mo
 
@@ -41,24 +42,14 @@ def _(mo):
 @app.cell
 def _(lab, mo):
     def set_ID(value):
-        try:
-            student_number = int(value.strip())
-            if student_number <= 0:
-                print(mo.md(f"### Invalid Student ID: {student_ID.value}"))
-            else:
-                print(f"Valid Student ID: {student_number}")
-                lab.set_student_ID(int(value))
-        except ValueError:
-            mo.stop(not student_ID.value.isdigit(), mo.md(f"### Invalid Student ID: {student_ID.value}"))
-            print(mo.md(f"### Invalid Student ID: {student_ID.value}"))
+        return cek.set_ID(mo, lab, value)
 
-    student_ID = mo.ui.text(value="", label="Student ID:",on_change=set_ID)
+    student_ID = mo.ui.text(value="", label="Student ID:", on_change=set_ID)
 
     def set_fname(value):
         lab._set_filename(value)
 
-    exp_ID = mo.ui.text(value="Automatic", label="Output file:", 
-                        on_change=set_fname)
+    exp_ID = mo.ui.text(value="Automatic", label="Output file:", on_change=set_fname)
 
     sample_selector = mo.ui.dropdown(
         options=lab.available_samples, value=None, label="Select sample:"
@@ -99,7 +90,7 @@ def _(cek, lab, mo, reset_button, run_button, sample_selector):
 
         fname = lab.filename_gen.random
         message = f"### Running Experiment\n"
-        for k,v in lab.metadata.items():
+        for k, v in lab.metadata.items():
             message += f"####{k} = {v}\n"
         message += f"#### File created = {fname}\n"
 
@@ -110,9 +101,9 @@ def _(cek, lab, mo, reset_button, run_button, sample_selector):
         )
 
         plot = cek.plotting()
-        image = plot.quick_plot(scatter=data,output="marimo")
+        image = plot.quick_plot(scatter=data, output="marimo")
 
-    mo.hstack([mo.vstack([mo.md(message),download_button]),image])
+    mo.hstack([mo.vstack([mo.md(message), download_button]), image])
     return (
         data,
         download_button,
@@ -129,6 +120,7 @@ def _(cek, lab, mo, reset_button, run_button, sample_selector):
 @app.cell
 def _():
     import numpy as np
+
     return (np,)
 
 

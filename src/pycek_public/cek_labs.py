@@ -1,18 +1,20 @@
-import pycek_public as cek
+import pycek as cek
 import numpy as np
 from typing import Callable, Dict, Optional, Union, Tuple
 
 from collections import OrderedDict
 
 from abc import ABC, abstractmethod
+
+
 class cek_labs(ABC):
-    def __init__(self, **kwargs):        
+    def __init__(self, **kwargs):
         self.token = None
         self.student_ID = 123456789
 
         self.noise_level = 1
         self.precision = 1
-        
+
         self.available_samples = []
         self.sample_parameters = {}
         self.sample = None
@@ -25,18 +27,20 @@ class cek_labs(ABC):
         self.output_file = None
         self.filename_gen = cek.TempFilenameGenerator()
 
-        self.metadata = OrderedDict({
-            'student_ID' : self.student_ID,
-            'number_of_values' : self.number_of_values,
-            'output_file' : self.output_file,
-        })
-        
+        self.metadata = OrderedDict(
+            {
+                "student_ID": self.student_ID,
+                "number_of_values": self.number_of_values,
+                "output_file": self.output_file,
+            }
+        )
+
         self.make_plots = False
         self.logger_level = "ERROR"
 
         # Define some lab specific parameters
         # Can overwrite the defaults
-        for k,w in kwargs.items():
+        for k, w in kwargs.items():
             setattr(self, k, w)
         np.random.seed(self.student_ID)
 
@@ -56,12 +60,12 @@ class cek_labs(ABC):
         self.list_of_data_files = []
 
     def __str__(self):
-        return f'CHEM2000 Lab: {self.__class__.__name__}'
+        return f"CHEM2000 Lab: {self.__class__.__name__}"
 
-    def set_student_ID(self,student_ID):
-        if isinstance(student_ID,int):
+    def set_student_ID(self, student_ID):
+        if isinstance(student_ID, int):
             self.student_ID = student_ID
-        elif isinstance(student_ID,str):
+        elif isinstance(student_ID, str):
             student_ID = student_ID.strip()
             if student_ID.isdigit():
                 self.student_ID = int(student_ID)
@@ -78,7 +82,7 @@ class cek_labs(ABC):
 
     def set_token(self, token):
         self.token = token
-        #print(f"Check: {self._check_token()}")
+        # print(f"Check: {self._check_token()}")
 
     def _check_token(self):
         if self.token != 23745419:
@@ -89,7 +93,7 @@ class cek_labs(ABC):
         for key, value in kwargs.items():
             self.metadata[key] = value
         return
-    
+
     def update_metadata_from_attr(self):
         for k in self.metadata:
             try:
@@ -97,12 +101,12 @@ class cek_labs(ABC):
             except:
                 pass
         return
-    
+
     def set_parameters(self, **kwargs):
         """
         Set parameters for the lab
         """
-        for k,w in kwargs.items():
+        for k, w in kwargs.items():
             if k == "student_ID":
                 self.set_student_ID(w)
             else:
@@ -110,53 +114,55 @@ class cek_labs(ABC):
         self.update_metadata_from_attr()
         return
 
-    def write_metadata(self,f=None):
+    def write_metadata(self, f=None):
         """
         Write metadata to the data file
         """
         if f is None:
+
             def dump(s):
                 self.logger.info(s)
+
         else:
+
             def dump(s):
-                with open(f, 'a') as file:
+                with open(f, "a") as file:
                     file.write(f"# {s}\n")
 
         for key, value in self.metadata.items():
             string = f"{key}"
-            string = string.replace("_"," ")
+            string = string.replace("_", " ")
             string = string[0].upper() + string[1:] + f" = {value}"
             dump(string)
 
-    def read_metadata(self,f):
+    def read_metadata(self, f):
         """
         Read metadata from the data file
-        
+
         Return: metadata (dict)
         """
         metadata = OrderedDict({})
 
         hash_lines = []
-        with open(f, 'r') as file:
+        with open(f, "r") as file:
             for line in file:
-                if line.strip().startswith('#'):
-                    hash_lines.append(line.replace('#','').strip())
-        
+                if line.strip().startswith("#"):
+                    hash_lines.append(line.replace("#", "").strip())
+
         for l in hash_lines:
             if ":" in l:
-                key, value = l.split(':')
+                key, value = l.split(":")
             elif "=" in l:
-                key, value = l.split('=')
+                key, value = l.split("=")
             else:
                 raise Exception("Unknown separator")
-            key = key.replace("#","").strip()
+            key = key.replace("#", "").strip()
             metadata[key] = value.strip()
-            
+
         return metadata
 
     def write_data_to_file(self, **kwargs):
-        """
-        """
+        """ """
         if self.output_file is None:
             filename = self.filename_gen.random
         else:
@@ -164,14 +170,14 @@ class cek_labs(ABC):
         self.add_metadata(output_file=filename)
 
         string = self.write_data_to_string(**kwargs)
-        with open(filename, 'w') as f:
+        with open(filename, "w") as f:
             f.write(string)
 
-        self.list_of_data_files.append( filename )
+        self.list_of_data_files.append(filename)
 
         return filename
 
-    def write_data_to_string(self,**kwargs):
+    def write_data_to_string(self, **kwargs):
         if "columns" in kwargs:
             string = ",".join(kwargs["columns"]) + "\n"
         elif "columns" in self.metadata:
@@ -183,21 +189,21 @@ class cek_labs(ABC):
         for row in self.data:
             # Handle multiple columns
             if isinstance(row, (list, tuple, np.ndarray)):
-                string += ",".join(map(str, row))+"\n"
+                string += ",".join(map(str, row)) + "\n"
             # Handle single-column case
             else:
-                string += str(row)+"\n"
+                string += str(row) + "\n"
 
         # Write metadata
         for key, value in self.metadata.items():
             s = f"{key}"
-            s = s.replace("_"," ")
+            s = s.replace("_", " ")
             s = s[0].upper() + s[1:] + f" = {value}"
             string += f"# {s}\n"
 
         return string
 
-    def read_data_file(self,filename=None):
+    def read_data_file(self, filename=None):
         if filename is None:
             raise ValueError("Filename is missing")
 
@@ -221,10 +227,14 @@ class cek_labs(ABC):
         from numpy.lib.recfunctions import structured_to_unstructured
 
         data = np.genfromtxt(
-            StringIO(data_lines), delimiter=',', 
-            comments='#', names=True, 
-            skip_header=0, dtype=None)   
-        
+            StringIO(data_lines),
+            delimiter=",",
+            comments="#",
+            names=True,
+            skip_header=0,
+            dtype=None,
+        )
+
         data_array = structured_to_unstructured(data)
 
         metadata = None
@@ -232,27 +242,28 @@ class cek_labs(ABC):
             metadata = OrderedDict({})
             for l in comments:
                 if ":" in l:
-                    key, value = l.split(':')
+                    key, value = l.split(":")
                 elif "=" in l:
-                    key, value = l.split('=')
+                    key, value = l.split("=")
                 else:
                     raise Exception("Unknown separator")
-                key = key.replace("#","").strip()
+                key = key.replace("#", "").strip()
                 metadata[key.strip()] = value.strip()
 
-        self.logger.debug("-"*50)
-        for k,v in metadata.items():
+        self.logger.debug("-" * 50)
+        for k, v in metadata.items():
             self.logger.debug(f"{k} = {v}")
-        self.logger.debug("-"*50)
+        self.logger.debug("-" * 50)
         # Output results
         # print("Comments:")
         # print("\n".join(comments))
         # print("\nExtracted Data:")
         # print(data_array)
         return data_array, header, metadata
-    
+
     def _cleanup(self, pattern=None):
         from pathlib import Path
+
         for ff in self.list_of_data_files:
             # Check if file exists before deleting
             file_path = Path(ff)
@@ -263,19 +274,19 @@ class cek_labs(ABC):
 
         # Delete multiple files using a pattern
         if pattern is not None:
-            for file_path in Path('.').glob(pattern):
+            for file_path in Path(".").glob(pattern):
                 file_path.unlink()
 
     # def process_file(self, filename=None):
     #     self.read_data(filename)
     #     result = self.process_data()
     #     return result
-    
-    def _valid_ID(self,ID):
+
+    def _valid_ID(self, ID):
         if ID in ["23745411"]:
             return True
         return False
-        
+
     def _round_values(self, values, precision=None):
         if precision is None:
             precision = self.precision
@@ -287,14 +298,16 @@ class cek_labs(ABC):
             else:
                 precision = int(-np.log10(precision))
         elif not isinstance(precision, (int, type(None))):
-            raise TypeError(f"Precision must be an integer or float, got {type(precision)}")
+            raise TypeError(
+                f"Precision must be an integer or float, got {type(precision)}"
+            )
 
         return np.round(values, decimals=precision)
-    
+
     def _generate_uniform_random(self, lower, upper, n):
         return self._round_values(np.random.uniform(lower, upper, n))
 
-    def _generate_normal_random(self,n,prm):
+    def _generate_normal_random(self, n, prm):
         list_of_1d_arrays = []
         for p in prm:
             values = np.random.normal(p[0], p[1], size=n)
@@ -303,9 +316,9 @@ class cek_labs(ABC):
         if len(prm) == 1:
             return np.array(self._round_values(values))
         else:
-            return np.column_stack( [*list_of_1d_arrays] )
+            return np.column_stack([*list_of_1d_arrays])
 
-    def _generate_noise(self,n,noise_level=None,ntype="normal"):
+    def _generate_noise(self, n, noise_level=None, ntype="normal"):
         if noise_level == None:
             raise ValueError("Missing noise level")
         if noise_level <= 0:
@@ -314,10 +327,10 @@ class cek_labs(ABC):
             return np.random.normal(0, noise_level, size=n)
 
     def _generate_data_from_function(self, func, params, nvalues, xrange):
-        x = np.sort(self._generate_uniform_random(nvalues,*xrange))
+        x = np.sort(self._generate_uniform_random(nvalues, *xrange))
         y = func(x, *params) + self._generate_noise(nvalues)
         y = self._round_values(y)
-        return np.column_stack((x,y))
+        return np.column_stack((x, y))
 
     def generate_data_from_function(
         self,
@@ -325,11 +338,11 @@ class cek_labs(ABC):
         params: Dict,
         nvalues: int,
         xrange: Optional[Tuple[float, float]] = None,
-        xspacing: str = 'random',
+        xspacing: str = "random",
         noise_level: Optional[float] = None,
         background: Optional[float] = None,
         weights: Optional[bool] = None,
-        positive: bool = False
+        positive: bool = False,
     ) -> np.ndarray:
         """
         Generate synthetic data points from a given function with optional noise and background.
@@ -370,7 +383,7 @@ class cek_labs(ABC):
         # Validate inputs
         if xrange is None:
             raise ValueError("xrange must be provided as (min, max) tuple")
-        
+
         if not isinstance(nvalues, int) or nvalues <= 0:
             raise ValueError("nvalues must be a positive integer")
 
@@ -388,13 +401,13 @@ class cek_labs(ABC):
         # Add optional modifications
         if background is not None:
             y += background
-        
+
         if noise_level is not None:
-            y += self._generate_noise(nvalues,noise_level)
-        
+            y += self._generate_noise(nvalues, noise_level)
+
         if positive:
-            eps = np.power(10.,-self.precision)
-            y = [ max(eps,np.abs(x)) for x in y ]
+            eps = np.power(10.0, -self.precision)
+            y = [max(eps, np.abs(x)) for x in y]
 
         # Note: weights parameter is currently unused
         if weights is not None:
@@ -407,21 +420,44 @@ class cek_labs(ABC):
 
     def create_data_file(self):
         data = self.create_data()
-        self.write_data_to_file(
-            self.metadata['output_file'], 
-            data, **self.metadata )
-        return self.metadata['output_file']
-    
+        self.write_data_to_file(self.metadata["output_file"], data, **self.metadata)
+        return self.metadata["output_file"]
+
     def get_data(self):
         return self.data
+
     def get_metadata(self):
         return self.metadata
 
     @abstractmethod
-    def setup_lab(self,**kwargs):
+    def setup_lab(self, **kwargs):
         pass
 
     @abstractmethod
     def create_data(self):
         pass
 
+    ## --- END STUDENT VERSION -- ##
+
+    def process_data_file(self, filename):
+        self.logger.result(f"Processing file {filename}")
+        data, cols, mtd = self.read_data_file(filename)
+        result = self.process_data(data, mtd)
+        return result
+
+    @abstractmethod
+    def process_data(self, data, **kwargs):
+        pass
+
+
+def set_ID(mo, lab, value):
+    try:
+        student_number = int(value.strip())
+        if student_number <= 0:
+            error = f"### Invalid Student ID: {value}"
+            print(mo.md(error))
+            raise ValueError(error)
+        print(mo.md(f"Valid Student ID: {student_number}"))
+        lab.set_student_ID(int(value))
+    except ValueError:
+        print(mo.md(f"### Invalid Student ID: {value}"))

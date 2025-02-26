@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.11.0"
+__generated_with = "0.11.9"
 app = marimo.App(width="medium")
 
 
@@ -8,6 +8,7 @@ app = marimo.App(width="medium")
 def _():
     import marimo as mo
     import pycek_public as cek
+
     lab = cek.stats_lab(make_plots=True)
     return cek, lab, mo
 
@@ -44,24 +45,14 @@ def _(mo):
 @app.cell
 def _(lab, mo):
     def set_ID(value):
-        try:
-            student_number = int(value.strip())
-            if student_number <= 0:
-                print(mo.md(f"### Invalid Student ID: {student_ID.value}"))
-            else:
-                print(f"Valid Student ID: {student_number}")
-                lab.set_student_ID(int(value))
-        except ValueError:
-            mo.stop(not student_ID.value.isdigit(), mo.md(f"### Invalid Student ID: {student_ID.value}"))
-            print(mo.md(f"### Invalid Student ID: {student_ID.value}"))
+        return cek.set_ID(mo, lab, value)
 
-    student_ID = mo.ui.text(value="", label="Student ID:",on_change=set_ID)
+    student_ID = mo.ui.text(value="", label="Student ID:", on_change=set_ID)
 
     def set_fname(value):
-        lab._set_filename(value)
+        lab.output_file = value
 
-    exp_ID = mo.ui.text(value="Automatic", label="Output file:", 
-                        on_change=set_fname)
+    exp_ID = mo.ui.text(value="Automatic", label="Output file:", on_change=set_fname)
 
     sample_selector = mo.ui.dropdown(
         options=lab.available_samples, value=None, label="Select task:"
@@ -85,27 +76,35 @@ def _(lab, mo):
 
 
 @app.cell
-def _(cek, lab, mo, reset_button, run_button, sample_selector):
+def _(cek, lab, mo, reset_button, run_button, sample_selector, student_ID):
     if reset_button.value:
         lab.ID = 0
-        lab._set_filename(None)
+        lab.output_file = None
 
     image = ""
     message = ""
     download_button = ""
+    data = None
+    file_content = None
+    fname = None
+    plot = None
+    # print(run_button.value)
     if run_button.value:
-        mo.stop(sample_selector.value is None, mo.md(f"### No sample selected !!"))
-
-        lab.set_parameters(
-            number_of_values = 12,
-            sample=sample_selector.value
+        mo.stop(
+            not student_ID.value.isdigit(),
+            mo.md(f"### Invalid Student ID: {student_ID.value}"),
         )
+        mo.stop(sample_selector.value is None, mo.md("### No sample selected !!"))
+
+        lab.set_parameters(number_of_values=12, sample=sample_selector.value)
         data = lab.create_data()
         file_content = lab.write_data_to_string()
 
-        fname = lab.filename_gen.random
-        message = f"### Running Experiment\n"
-        for k,v in lab.metadata.items():
+        fname = lab.output_file
+        if not fname:
+            fname = lab.filename_gen.random
+        message = "### Running Experiment\n"
+        for k, v in lab.metadata.items():
             message += f"####{k} = {v}\n"
         message += f"#### File created = {fname}\n"
 
@@ -116,13 +115,11 @@ def _(cek, lab, mo, reset_button, run_button, sample_selector):
         )
 
         plot = cek.plotting()
-        image = plot.quick_plot(scatter=data,output="marimo")
-
-    mo.hstack([mo.vstack([mo.md(message),download_button]),image])
+        image = plot.quick_plot(scatter=data, output="marimo")
+    mo.hstack([mo.vstack([mo.md(message), download_button]), image])
     return (
         data,
         download_button,
-        f,
         file_content,
         fname,
         image,
@@ -131,6 +128,11 @@ def _(cek, lab, mo, reset_button, run_button, sample_selector):
         plot,
         v,
     )
+
+
+@app.cell
+def _():
+    return
 
 
 if __name__ == "__main__":

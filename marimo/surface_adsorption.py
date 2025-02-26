@@ -8,6 +8,7 @@ app = marimo.App(width="medium")
 def _():
     import marimo as mo
     import pycek_public as cek
+
     lab = cek.cek.surface_adsorption(make_plots=True)
     return cek, lab, mo
 
@@ -43,36 +44,25 @@ def _(mo):
 @app.cell
 def _(lab, mo):
     def set_ID(value):
-        try:
-            student_number = int(value.strip())
-            if student_number <= 0:
-                print(mo.md(f"### Invalid Student ID: {student_ID.value}"))
-            else:
-                print(f"Valid Student ID: {student_number}")
-                lab.set_student_ID(int(value))
-        except ValueError:
-            mo.stop(not student_ID.value.isdigit(), mo.md(f"### Invalid Student ID: {student_ID.value}"))
-            print(mo.md(f"### Invalid Student ID: {student_ID.value}"))
+        return cek.set_ID(mo, lab, value)
 
-
-    student_ID = mo.ui.text(value="", label="Student ID:",on_change=set_ID)
+    student_ID = mo.ui.text(value="", label="Student ID:", on_change=set_ID)
 
     def set_fname(value):
-        lab._set_filename(value)
+        lab.output_file = value
+
     exp_ID = mo.ui.text(value="Automatic", label="Output file:", on_change=set_fname)
 
-    temperature = mo.ui.number(start=0,stop=100,step=1,value=25,label="Temperature (C)")
+    temperature = mo.ui.number(
+        start=0, stop=100, step=1, value=25, label="Temperature (C)"
+    )
 
     run_button = mo.ui.run_button(label="Run Experiment")
     reset_button = mo.ui.run_button(label="Reset Counter")
 
     # Create download button using marimo's download function
 
-    mo.vstack([student_ID, 
-               exp_ID, 
-               temperature,
-               run_button, 
-               reset_button])
+    mo.vstack([student_ID, exp_ID, temperature, run_button, reset_button])
     return (
         exp_ID,
         reset_button,
@@ -88,45 +78,41 @@ def _(lab, mo):
 def _(cek, lab, mo, reset_button, run_button, student_ID, temperature):
     if reset_button.value:
         lab.ID = 0
-        lab._set_filename(None)
+        lab.output_file = None
 
     image = ""
     message = ""
     download_button = ""
-    if run_button.value:
-        lab.set_parameters(
-            temperature = temperature.value+273.15
-        )
-        data = lab.create_data()
-        file_content = lab.write_data_to_string()
-    
-        fname = lab.filename_gen.random
-        message = f"### Running Experiment\n"
-        for k,v in lab.metadata.items():
-            message += f"####{k} = {v}\n"
-        message += f"#### File created = {fname}\n"
-    
-        download_button = mo.download(
-            file_content,
-            filename=fname,
-            label=f"Download {fname}",
-        )
-    
-        plot = cek.plotting()
-        image = plot.quick_plot(scatter=data,output="marimo")
-    
-    mo.hstack([mo.vstack([mo.md(message),download_button]),image])
+    if not run_button.value:
+        return
+    lab.set_parameters(temperature=temperature.value + 273.15)
+    data = lab.create_data()
+    file_content = lab.write_data_to_string()
+
+    fname = lab.filename_gen.random
+    message = f"### Running Experiment\n"
+    for k, v in lab.metadata.items():
+        message += f"####{k} = {v}\n"
+    message += f"#### File created = {fname}\n"
+
+    download_button = mo.download(
+        file_content,
+        filename=fname,
+        label=f"Download {fname}",
+    )
+
+    plot = cek.plotting()
+    image = plot.quick_plot(scatter=data, output="marimo")
+
+    mo.hstack([mo.vstack([mo.md(message), download_button]), image])
     return (
         data,
         download_button,
-        f,
         file_content,
         fname,
         image,
-        k,
         message,
         plot,
-        v,
     )
 
 
