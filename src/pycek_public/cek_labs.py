@@ -6,6 +6,17 @@ from collections import OrderedDict
 
 from abc import ABC, abstractmethod
 
+def set_ID(mo, lab, value):
+    try:
+        student_number = int(value.strip())
+        if student_number <= 0:
+            error = f"### Invalid Student ID: {value}"
+            print(mo.md(error))
+            raise ValueError(error)
+        print(mo.md(f"Valid Student ID: {student_number}"))
+        lab.set_student_ID(int(value))
+    except ValueError:
+        print(mo.md(f"### Invalid Student ID: {value}"))
 
 class cek_labs(ABC):
     def __init__(self, **kwargs):
@@ -436,28 +447,3 @@ class cek_labs(ABC):
     @abstractmethod
     def create_data(self):
         pass
-
-    ## --- END STUDENT VERSION -- ##
-
-    def process_data_file(self, filename):
-        self.logger.result(f"Processing file {filename}")
-        data, cols, mtd = self.read_data_file(filename)
-        result = self.process_data(data, mtd)
-        return result
-
-    @abstractmethod
-    def process_data(self, data, **kwargs):
-        pass
-
-
-def set_ID(mo, lab, value):
-    try:
-        student_number = int(value.strip())
-        if student_number <= 0:
-            error = f"### Invalid Student ID: {value}"
-            print(mo.md(error))
-            raise ValueError(error)
-        print(mo.md(f"Valid Student ID: {student_number}"))
-        lab.set_student_ID(int(value))
-    except ValueError:
-        print(mo.md(f"### Invalid Student ID: {value}"))
