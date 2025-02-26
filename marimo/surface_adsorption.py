@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.11.0"
+__generated_with = "0.11.9"
 app = marimo.App(width="medium")
 
 
@@ -9,7 +9,7 @@ def _():
     import marimo as mo
     import pycek_public as cek
 
-    lab = cek.cek.surface_adsorption(make_plots=True)
+    lab = cek.surface_adsorption(make_plots=True)
     return cek, lab, mo
 
 
@@ -42,7 +42,7 @@ def _(mo):
 
 
 @app.cell
-def _(lab, mo):
+def _(cek, lab, mo):
     def set_ID(value):
         return cek.set_ID(mo, lab, value)
 
@@ -83,26 +83,30 @@ def _(cek, lab, mo, reset_button, run_button, student_ID, temperature):
     image = ""
     message = ""
     download_button = ""
-    if not run_button.value:
-        return
-    lab.set_parameters(temperature=temperature.value + 273.15)
-    data = lab.create_data()
-    file_content = lab.write_data_to_string()
+    if run_button.value:
+        mo.stop(
+            not student_ID.value.isdigit(),
+            mo.md(f"### Invalid Student ID: {student_ID.value}"),
+        )
 
-    fname = lab.filename_gen.random
-    message = f"### Running Experiment\n"
-    for k, v in lab.metadata.items():
-        message += f"####{k} = {v}\n"
-    message += f"#### File created = {fname}\n"
+        lab.set_parameters(temperature=temperature.value + 273.15)
+        data = lab.create_data()
+        file_content = lab.write_data_to_string()
 
-    download_button = mo.download(
-        file_content,
-        filename=fname,
-        label=f"Download {fname}",
-    )
+        fname = lab.filename_gen.random
+        message = f"### Running Experiment\n"
+        for k, v in lab.metadata.items():
+            message += f"####{k} = {v}\n"
+        message += f"#### File created = {fname}\n"
 
-    plot = cek.plotting()
-    image = plot.quick_plot(scatter=data, output="marimo")
+        download_button = mo.download(
+            file_content,
+            filename=fname,
+            label=f"Download {fname}",
+        )
+
+        plot = cek.plotting()
+        image = plot.quick_plot(scatter=data, output="marimo")
 
     mo.hstack([mo.vstack([mo.md(message), download_button]), image])
     return (
@@ -111,8 +115,10 @@ def _(cek, lab, mo, reset_button, run_button, student_ID, temperature):
         file_content,
         fname,
         image,
+        k,
         message,
         plot,
+        v,
     )
 
 

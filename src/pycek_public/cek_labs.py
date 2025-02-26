@@ -6,17 +6,6 @@ from collections import OrderedDict
 
 from abc import ABC, abstractmethod
 
-def set_ID(mo, lab, value):
-    try:
-        student_number = int(value.strip())
-        if student_number <= 0:
-            error = f"### Invalid Student ID: {value}"
-            print(mo.md(error))
-            raise ValueError(error)
-        print(mo.md(f"Valid Student ID: {student_number}"))
-        lab.set_student_ID(int(value))
-    except ValueError:
-        print(mo.md(f"### Invalid Student ID: {value}"))
 
 class cek_labs(ABC):
     def __init__(self, **kwargs):
@@ -447,3 +436,4 @@ class cek_labs(ABC):
     @abstractmethod
     def create_data(self):
         pass
+

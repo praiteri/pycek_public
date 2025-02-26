@@ -104,7 +104,7 @@ def _(compounds, mo, stoichiometry):
 def _(mo, np):
     step = mo.ui.slider(steps=np.logspace(-8,0,90),label="$\delta c$",show_value=True)
     tol = mo.ui.slider(steps=np.logspace(-8,0,90),label="Convergence Threshold",show_value=True)
-    max_iterations = mo.ui.slider(steps=np.logspace(2,10,90),label="Max Iterations",show_value=True)
+    max_iterations = mo.ui.slider(steps=np.logspace(2,6,90),label="Max Iterations",show_value=True)
 
     check_0 = mo.ui.checkbox(label= "opt 0",)
     check_1 = mo.ui.checkbox(label= f"Decrease $\delta c$",)
@@ -240,6 +240,11 @@ def _(
             plt.ylabel(axes[1])
         if log:
             plt.yscale("log")
+
+        ax = plt.gca()
+        ax.text(0.5, 0.5, 'TEMPLATE', transform=ax.transAxes,
+            fontsize=40, color='gray', alpha=0.5,
+            ha='center', va='center', rotation=30)
         plt.legend()
         return plt.gca()
     return plot, solve_equilibrium

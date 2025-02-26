@@ -119,6 +119,11 @@ def _(
     message = ""
     download_button = ""
     if run_button.value:
+        mo.stop(
+            not student_ID.value.isdigit(),
+            mo.md(f"### Invalid Student ID: {student_ID.value}"),
+        )
+        
         cv_vol = cv_volume.value
         oh_vol = oh_volume.value
         h2o_vol = h2o_volume.value

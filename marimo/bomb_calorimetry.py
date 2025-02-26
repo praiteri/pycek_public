@@ -82,6 +82,10 @@ def _(cek, lab, mo, reset_button, run_button, sample_selector):
     message = ""
     download_button = ""
     if run_button.value:
+        mo.stop(
+            not student_ID.value.isdigit(),
+            mo.md(f"### Invalid Student ID: {student_ID.value}"),
+        )
         mo.stop(sample_selector.value is None, mo.md(f"### No sample selected !!"))
 
         lab.set_parameters(sample=sample_selector.value)
