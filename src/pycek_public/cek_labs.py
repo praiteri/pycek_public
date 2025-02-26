@@ -1,4 +1,4 @@
-import pycek as cek
+import pycek_public as cek
 import numpy as np
 from typing import Callable, Dict, Optional, Union, Tuple
 
