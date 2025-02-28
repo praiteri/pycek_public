@@ -1,7 +1,8 @@
 from typing import Annotated, Callable, Coroutine
-from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 import marimo
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi import FastAPI, Form, Request, Response
+import mimetypes
 import os
 from pathlib import Path
 
@@ -24,19 +25,38 @@ marimo_server = (
     .with_app(path="/surface", root="./surface_adsorption.py")
 )
 
-# Create a route to download a file
-@app.get("/download-pdf/{pdf_name}")
-async def download_pdf(pdf_name: str):
-    # Assuming PDFs are stored in a 'pdfs' directory
-    pdf_path = f"./pdfs/{pdf_name}"
+def get_media_type(file_name: str):
+    mime_type, _ = mimetypes.guess_type(file_name)
+    return mime_type or 'application/octet-stream'  # Default to binary if unknown
 
-    if os.path.exists(pdf_path):
+@app.get("/download-file/{file_name}")
+async def download_file(file_name: str):
+    file_path = f"./docs/{file_name}"
+    if os.path.exists(file_path):
+        # For example:
+        # For "document.pdf" - media_type would be "application/pdf"
+        # For "document.docx" - media_type would be "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        # For "document.doc" - media_type would be "application/msword"
         return FileResponse(
-            pdf_path,
-            media_type='application/pdf',
-            filename=pdf_name
+            file_path,
+            media_type=get_media_type(file_name),
+            filename=file_name
         )
-    return {"error": f"PDF not found [./pdfs/{pdf_name}]"}, 404
+    raise HTTPException(status_code=404, detail=f"Document not found [./docs/{file_name}]")
+
+## Create a route to download a file
+#@app.get("/download-file/{file_name}")
+#async def download_file(file_name: str):
+#    # Assuming files are stored in a 'docs' directory
+#    file_path = f"./docs/{file_name}"
+#
+#    if os.path.exists(file_path):
+#        return FileResponse(
+#            file_path,
+#            media_type='application/pdf',
+#            filename=file_name
+#        )
+#    return {"error": f"Document not found [./docs/{file_name}]"}, 404
 
 @app.get("/calendar", response_class=HTMLResponse)
 async def read_root():

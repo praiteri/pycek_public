@@ -27,7 +27,7 @@ class stats_lab(cek.cek_labs):
                 (1.0, 0.1),
                 (12., 2.0)
             ],
-            'exp_values' : (1.0,10.0),
+            'expected_value' : (1.0,10.0),
             "precision" : 3,
             }
         
@@ -51,7 +51,7 @@ class stats_lab(cek.cek_labs):
             "function" : lambda x,m,q: m*x + q, 
             "gen_values" : {'m':12.3 , 'q':1.0},
             "xrange" : [0.0 , 10.0],
-            "exp_values" : 11.3,
+            "expected_value" : (11.3,0.9),
             "precision" : 3,
             }
 
@@ -94,6 +94,9 @@ class stats_lab(cek.cek_labs):
             number_of_values = self.number_of_values,
             sample = self.sample,
         )
+
+        if "expected_value" in prm:
+            self.add_metadata( **{"expected_value": prm["expected_value"]} )
         
         if self.sample in ["Averages", 'Propagation of uncertainty', 'Comparison of averages']:
             data = self._generate_normal_random(self.number_of_values, prm['gen_values'])

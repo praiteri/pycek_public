@@ -43,7 +43,7 @@ def _(mo):
 
 
 @app.cell
-def _(lab, mo):
+def _(cek, lab, mo):
     def set_ID(value):
         return cek.set_ID(mo, lab, value)
 
