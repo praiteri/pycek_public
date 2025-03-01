@@ -132,7 +132,7 @@ def _(
             volumes={"cv": cv_vol, "oh": oh_vol, "h2o": h2o_vol},
             temperature=temperature.value + 273.15,
         )
-        data = lab.create_data()
+        data = lab.create_data_for_lab()
         file_content = lab.write_data_to_string()
 
         fname = lab.filename_gen.random

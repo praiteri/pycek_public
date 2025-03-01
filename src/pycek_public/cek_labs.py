@@ -435,6 +435,14 @@ class cek_labs(ABC):
         self.write_data_to_file(self.metadata["output_file"], data, **self.metadata)
         return self.metadata["output_file"]
 
+    def create_data_for_lab(self,seed_local=None):
+        if seed_local is None:
+            seed_local = np.random.randint(1,999999)
+        self.add_metadata( **{"sample_ID" : seed_local} )
+        np.random.seed( seed_local )
+        data = self.create_data()
+        return data
+
     def get_data(self):
         return self.data
 

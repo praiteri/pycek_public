@@ -97,7 +97,7 @@ def _(cek, lab, mo, reset_button, run_button, sample_selector, student_ID):
         mo.stop(sample_selector.value is None, mo.md("### No sample selected !!"))
 
         lab.set_parameters(number_of_values=12, sample=sample_selector.value)
-        data = lab.create_data()
+        data = lab.create_data_for_lab()
         file_content = lab.write_data_to_string()
 
         fname = lab.output_file

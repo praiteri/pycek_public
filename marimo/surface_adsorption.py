@@ -90,7 +90,7 @@ def _(cek, lab, mo, reset_button, run_button, student_ID, temperature):
         )
 
         lab.set_parameters(temperature=temperature.value + 273.15)
-        data = lab.create_data()
+        data = lab.create_data_for_lab()
         file_content = lab.write_data_to_string()
 
         fname = lab.filename_gen.random
