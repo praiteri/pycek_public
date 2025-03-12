@@ -93,7 +93,9 @@ def _(cek, lab, mo, reset_button, run_button, student_ID, temperature):
         data = lab.create_data_for_lab()
         file_content = lab.write_data_to_string()
 
-        fname = lab.filename_gen.random
+        fname = lab.output_file
+        if not fname:
+            fname = lab.filename_gen.random
         message = f"### Running Experiment\n"
         for k, v in lab.metadata.items():
             message += f"####{k} = {v}\n"
