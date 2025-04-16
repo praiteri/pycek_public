@@ -15,7 +15,7 @@ class crystal_violet(cek.cek_labs):
 
         self.expt_time = 1000
         self.number_of_values = 501
-        self.noise_level = 0.1
+        self.noise_level = 0.05
         self.precision = 6
         self.background = 0.01
         
