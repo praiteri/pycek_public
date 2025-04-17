@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.11.7"
+__generated_with = "0.12.5"
 app = marimo.App(width="full")
 
 
@@ -10,12 +10,14 @@ def _():
     import numpy as np
     import matplotlib.pyplot as plt
     import copy
+    from typing import Dict
+    from numpy.typing import NDArray
 
     nspecies = mo.ui.number(2,10,value=2,label="Number of species")
     mo.vstack([
         mo.md("#**Numerical Solution of Equilibrium Problems**").center(),
         nspecies],gap=2)
-    return copy, mo, np, nspecies, plt
+    return Dict, NDArray, copy, mo, np, nspecies, plt
 
 
 @app.cell
@@ -297,7 +299,7 @@ def _(compute_Q, concentrations, execute, keq, mo, np, stoichiometry):
         mm = mo.md("##**Optimisation Achieved**")
     else:
         mm = mo.md("##**Optimisation Failed**")
-    
+
     mo.vstack([
             mm.center(),
             mo.hstack([plot_c,plot_f,plot_d],
