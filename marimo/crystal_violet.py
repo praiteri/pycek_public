@@ -52,7 +52,7 @@ def _(lab, mo):
     student_ID = mo.ui.text(value="", label="Student ID:", on_change=set_ID)
 
     def set_fname(value):
-        lab._set_filename(value)
+        lab.output_file = value
 
     exp_ID = mo.ui.text(value="Automatic", label="Output file:", on_change=set_fname)
 
@@ -135,7 +135,9 @@ def _(
         data = lab.create_data_for_lab()
         file_content = lab.write_data_to_string()
 
-        fname = lab.filename_gen.random
+        fname = lab.output_file
+        if not fname:
+            fname = lab.filename_gen.random
         message = f"### Running Experiment\n"
         for k, v in lab.metadata.items():
             message += f"####{k} = {v}\n"
