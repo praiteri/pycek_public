@@ -31,10 +31,9 @@ def _(mo):
 
         ## Instructions
         1. Type your student ID
-        2. Select the volumes of the CV solution, the hydroxide solution and DI water to use
-        3. Select the temperature of the experiment
-        4. Click "Run Experiment"
-        5. Perform at least 5 experiments at different temperatures
+        2. Select the temperature of the experiment
+        3. Click "Run Experiment"
+        4. Perform experiments at 5 different temperatures
         ___
         """
     )
