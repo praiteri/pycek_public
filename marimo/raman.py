@@ -14,11 +14,11 @@ def _():
     from scipy.optimize import curve_fit
     from scipy.signal import find_peaks
 
-    from raman_fit import RamanFitter
+    import pycek_public as cek
 
     import altair as alt
     import polars as pl
-    return RamanFitter, StringIO, alt, mo, np, pd
+    return cek, StringIO, alt, mo, np, pd
 
 
 @app.cell
@@ -254,7 +254,7 @@ def _(
 
 @app.cell
 def _(
-    RamanFitter,
+    cek,
     filename,
     fitting_parameters,
     get_fit_results,
@@ -270,7 +270,7 @@ def _(
     set_peak_positions,
     wavenumbers,
 ):
-    fitter = RamanFitter(wavenumbers, intensities)
+    fitter = cek.RamanFitter(wavenumbers, intensities)
 
     freq_range = fitting_parameters['range']
     if freq_range[0] in [None, ""]:
