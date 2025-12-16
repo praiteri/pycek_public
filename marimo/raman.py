@@ -17,7 +17,6 @@ def _():
     import pycek_public as cek
 
     import altair as alt
-    import polars as pl
     return cek, StringIO, alt, mo, np, pd
 
 
