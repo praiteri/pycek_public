@@ -22,7 +22,9 @@ dependencies = [
     "colorama",
     "matplotlib",
     "marimo",
-    "fastapi"
+    "fastapi",
+    "altair",
+    "pandas",
 ]
 
 [project.optional-dependencies]

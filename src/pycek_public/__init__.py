@@ -9,4 +9,4 @@ from .crystal_violet import *
 from .surface_adsorption import *
 
 from .plotting import *
-
+from .raman_fitter.py import *

@@ -23,6 +23,7 @@ marimo_server = (
     .with_app(path="/stats", root="./statistics_lab.py")
     .with_app(path="/eq", root="./equilibrium.py")
     .with_app(path="/surface", root="./surface_adsorption.py")
+    .with_app(path="/raman", root="./raman.py")
 )
 
 def get_media_type(file_name: str):

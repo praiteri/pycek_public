@@ -1,3 +1,5 @@
 fastapi
 colorama
 marimo
+altair
+
