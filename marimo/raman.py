@@ -51,7 +51,8 @@ def _(StringIO, alt, filename, mo, pd):
 
     _file_contents = filename.contents()
     df = pd.read_csv(StringIO(_file_contents.decode('utf-8')), sep=r"\s+")
-    df.columns = ("X","Y","Z")
+    df.columns = ("X","Y")
+    #df.columns = ("X","Y","Z")
     # print(df)
 
     # Create an interval selection for box zoom
