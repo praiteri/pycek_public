@@ -50,7 +50,7 @@ def _(StringIO, alt, filename, mo, pd):
         mo.stop(mo.md("Upload a file"))
 
     _file_contents = filename.contents()
-    df = pd.read_csv(StringIO(_file_contents.decode('utf-8')), sep=r"\s+")
+    df = pd.read_csv(StringIO(_file_contents.decode('utf-8')), sep=r"\s+",skiprows=2)
     df.columns = ("X","Y")
     #df.columns = ("X","Y","Z")
     # print(df)
