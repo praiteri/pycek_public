@@ -103,6 +103,8 @@ def _(cek, lab, mo, reset_button, run_button, sample_selector, student_ID):
         fname = lab.output_file
         if not fname:
             fname = lab.filename_gen.random
+        if not fname.endswith('.csv'):
+            fname += '.csv'
         message = "### Running Experiment\n"
         for k, v in lab.metadata.items():
             message += f"####{k} = {v}\n"
