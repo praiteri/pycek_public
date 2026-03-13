@@ -1,10 +1,14 @@
-import pycek_public as cek
-import numpy as np
-from typing import Callable, Dict, Optional, Union, Tuple
-
-from collections import OrderedDict
-
+import time
 from abc import ABC, abstractmethod
+from collections import OrderedDict
+from io import StringIO
+from pathlib import Path
+from typing import Callable, Dict, Optional, Tuple
+
+import numpy as np
+from numpy.lib.recfunctions import structured_to_unstructured
+
+import pycek_public as cek
 
 
 def set_ID(mo, lab, value):
@@ -18,6 +22,7 @@ def set_ID(mo, lab, value):
         lab.set_student_ID(int(value))
     except ValueError:
         print(mo.md(f"### Invalid Student ID: {value}"))
+
 
 class cek_labs(ABC):
     def __init__(self, **kwargs):
@@ -50,23 +55,13 @@ class cek_labs(ABC):
         self.make_plots = False
         self.logger_level = "ERROR"
 
-        # Define some lab specific parameters
-        # Can overwrite the defaults
+        # Apply any keyword overrides before setting up the lab
         for k, w in kwargs.items():
             setattr(self, k, w)
-        np.random.seed(self.student_ID)
 
         self.logger = cek.setup_logger(level=self.logger_level)
-        # self.logger.debug("This is a debug message")
-        # self.logger.verbose("This is a verbose message")  # New verbose level
-        # self.logger.info("This is an info message")
-        # self.logger.result("This is an result message")
-        # self.logger.warning("This is a warning message")
-        # self.logger.error("This is an error message")
-        # self.logger.critical("This is a critical message")
-        # quit()
 
-        # Lab specific parameters
+        # Lab-specific setup (defined by subclasses)
         self.setup_lab()
 
         self.list_of_data_files = []
@@ -74,7 +69,12 @@ class cek_labs(ABC):
     def __str__(self):
         return f"CHEM2000 Lab: {self.__class__.__name__}"
 
+    # ------------------------------------------------------------------
+    # Identity / configuration
+    # ------------------------------------------------------------------
+
     def set_student_ID(self, student_ID):
+        """Store the student ID in metadata. Does NOT seed the RNG."""
         if isinstance(student_ID, int):
             self.student_ID = student_ID
         elif isinstance(student_ID, str):
@@ -85,234 +85,258 @@ class cek_labs(ABC):
                 raise ValueError("student_ID must be an integer")
         else:
             raise ValueError("student_ID must be an integer")
-        np.random.seed(self.student_ID)
         self.update_metadata_from_attr()
-        self.logger.critical(f"Initial seed = {np.random.get_state()[1][0]}")
-
-    def reset(self):
-        np.random.seed(self.student_ID)
 
     def set_token(self, token):
         self.token = token
-        # print(f"Check: {self._check_token()}")
 
     def _check_token(self):
-        if self.token != 23745419:
-            return True
-        return False
-
-    def add_metadata(self, **kwargs):
-        for key, value in kwargs.items():
-            self.metadata[key] = value
-        return
-
-    def update_metadata_from_attr(self):
-        for k in self.metadata:
-            try:
-                self.metadata[k] = getattr(self, k)
-            except:
-                pass
-        return
+        return self.token != 23745419
 
     def set_parameters(self, **kwargs):
-        """
-        Set parameters for the lab
-        """
+        """Set one or more lab parameters by name."""
         for k, w in kwargs.items():
             if k == "student_ID":
                 self.set_student_ID(w)
             else:
                 setattr(self, k, w)
         self.update_metadata_from_attr()
-        return
+
+    # ------------------------------------------------------------------
+    # Metadata helpers
+    # ------------------------------------------------------------------
+
+    def add_metadata(self, **kwargs):
+        for key, value in kwargs.items():
+            self.metadata[key] = value
+
+    def update_metadata_from_attr(self):
+        for k in self.metadata:
+            try:
+                self.metadata[k] = getattr(self, k)
+            except AttributeError:
+                pass
+
+    def get_metadata(self):
+        return self.metadata
+
+    # ------------------------------------------------------------------
+    # Metadata I/O
+    # ------------------------------------------------------------------
 
     def write_metadata(self, f=None):
-        """
-        Write metadata to the data file
-        """
+        """Write metadata to a file (appended) or to the logger."""
         if f is None:
-
             def dump(s):
                 self.logger.info(s)
-
         else:
-
             def dump(s):
                 with open(f, "a") as file:
                     file.write(f"# {s}\n")
 
         for key, value in self.metadata.items():
-            string = f"{key}"
-            string = string.replace("_", " ")
-            string = string[0].upper() + string[1:] + f" = {value}"
-            dump(string)
+            label = key.replace("_", " ")
+            label = label[0].upper() + label[1:]
+            dump(f"{label} = {value}")
 
     def read_metadata(self, f):
         """
-        Read metadata from the data file
+        Read metadata comment lines from a data file.
 
-        Return: metadata (dict)
+        Returns
+        -------
+        metadata : OrderedDict
         """
-        metadata = OrderedDict({})
-
-        hash_lines = []
+        metadata = OrderedDict()
         with open(f, "r") as file:
             for line in file:
-                if line.strip().startswith("#"):
-                    hash_lines.append(line.replace("#", "").strip())
-
-        for l in hash_lines:
-            if ":" in l:
-                key, value = l.split(":")
-            elif "=" in l:
-                key, value = l.split("=")
-            else:
-                raise Exception("Unknown separator")
-            key = key.replace("#", "").strip()
-            metadata[key] = value.strip()
-
+                line = line.strip()
+                if not line.startswith("#"):
+                    continue
+                line = line.replace("#", "").strip()
+                if "=" in line:
+                    key, value = line.split("=", 1)
+                elif ":" in line:
+                    key, value = line.split(":", 1)
+                else:
+                    raise ValueError(f"Unknown separator in metadata line: {line!r}")
+                metadata[key.strip()] = value.strip()
         return metadata
 
+    # ------------------------------------------------------------------
+    # Data file I/O
+    # ------------------------------------------------------------------
+
     def write_data_to_file(self, **kwargs):
-        """ """
-        if self.output_file is None:
-            filename = self.filename_gen.random
-        else:
-            filename = self.output_file
+        """Write self.data plus metadata to a file and return the filename."""
+        filename = self.output_file if self.output_file is not None else self.filename_gen.random
         self.add_metadata(output_file=filename)
 
-        string = self.write_data_to_string(**kwargs)
         with open(filename, "w") as f:
-            f.write(string)
+            f.write(self.write_data_to_string(**kwargs))
 
         self.list_of_data_files.append(filename)
-
         return filename
 
     def write_data_to_string(self, **kwargs):
-        if "columns" in kwargs:
-            string = ",".join(kwargs["columns"]) + "\n"
-        elif "columns" in self.metadata:
-            string = ",".join(self.metadata["columns"]) + "\n"
-        else:
-            string = ""
+        """Serialise self.data and metadata to a CSV string."""
+        columns = kwargs.get("columns") or self.metadata.get("columns")
+        string = (",".join(columns) + "\n") if columns else ""
 
-        # Write data
         for row in self.data:
-            # Handle multiple columns
             if isinstance(row, (list, tuple, np.ndarray)):
                 string += ",".join(map(str, row)) + "\n"
-            # Handle single-column case
             else:
                 string += str(row) + "\n"
 
-        # Write metadata
         for key, value in self.metadata.items():
-            s = f"{key}"
-            s = s.replace("_", " ")
-            s = s[0].upper() + s[1:] + f" = {value}"
-            string += f"# {s}\n"
+            label = key.replace("_", " ")
+            label = label[0].upper() + label[1:]
+            string += f"# {label} = {value}\n"
 
         return string
 
     def read_data_file(self, filename=None):
+        """
+        Read a data file written by write_data_to_file.
+
+        Returns
+        -------
+        data_array : np.ndarray
+        header     : str
+        metadata   : OrderedDict
+        """
         if filename is None:
-            raise ValueError("Filename is missing")
+            raise ValueError("filename must be provided")
 
-        # Read file and separate comments from data
-        comments = []
-        data_lines = []
-
+        comments, data_lines = [], []
         with open(filename, "r") as f:
             for line in f:
-                if line.startswith("#"):
-                    comments.append(line.strip())  # Store comment lines
-                else:
-                    data_lines.append(line.strip())  # Store data lines
+                (comments if line.startswith("#") else data_lines).append(line.strip())
 
-        # Extract header and data
-        header = data_lines[0]  # First non-comment line is the header
-        data_lines = "\n".join(data_lines[0:])  # Join remaining lines as CSV data
-
-        # Convert CSV data to NumPy array
-        from io import StringIO
-        from numpy.lib.recfunctions import structured_to_unstructured
+        header = data_lines[0]
+        csv_block = "\n".join(data_lines)
 
         data = np.genfromtxt(
-            StringIO(data_lines),
+            StringIO(csv_block),
             delimiter=",",
             comments="#",
             names=True,
             skip_header=0,
             dtype=None,
         )
-
         data_array = structured_to_unstructured(data)
 
         metadata = None
-        if len(comments) > 0:
-            metadata = OrderedDict({})
-            for l in comments:
-                if ":" in l:
-                    key, value = l.split(":")
-                elif "=" in l:
-                    key, value = l.split("=")
+        if comments:
+            metadata = OrderedDict()
+            for line in comments:
+                line = line.replace("#", "").strip()
+                if "=" in line:
+                    key, value = line.split("=", 1)
+                elif ":" in line:
+                    key, value = line.split(":", 1)
                 else:
-                    raise Exception("Unknown separator")
-                key = key.replace("#", "").strip()
+                    raise ValueError(f"Unknown separator in metadata line: {line!r}")
                 metadata[key.strip()] = value.strip()
 
-        self.logger.debug("-" * 50)
-        for k, v in metadata.items():
-            self.logger.debug(f"{k} = {v}")
-        self.logger.debug("-" * 50)
-        # Output results
-        # print("Comments:")
-        # print("\n".join(comments))
-        # print("\nExtracted Data:")
-        # print(data_array)
+        if self.logger.isEnabledFor(10):  # DEBUG level
+            self.logger.debug("-" * 50)
+            for k, v in (metadata or {}).items():
+                self.logger.debug(f"{k} = {v}")
+            self.logger.debug("-" * 50)
+
         return data_array, header, metadata
 
+    # ------------------------------------------------------------------
+    # Data generation
+    # ------------------------------------------------------------------
+
+    def create_data_for_lab(self, sample_ID=None):
+        """
+        Generate a dataset for the lab.
+
+        The RNG is seeded from the current system time (nanoseconds) so every
+        call produces a unique dataset.  The seed is stored as ``sample_ID``
+        in the metadata so the exact dataset can be reproduced later via
+        ``reproduce_data(sample_ID)``.
+
+        Parameters
+        ----------
+        sample_ID : int, optional
+            Provide an explicit seed to reproduce a previously generated
+            dataset.  If omitted, a fresh time-based seed is used.
+
+        Returns
+        -------
+        data : object
+            Whatever ``create_data`` returns for the concrete subclass.
+        """
+        if sample_ID is None:
+            # Mask to a valid 32-bit unsigned integer for numpy
+            sample_ID = time.time_ns() & 0xFFFFFFFF
+
+        self.add_metadata(sample_ID=sample_ID)
+        np.random.seed(sample_ID)
+        self.logger.debug(f"RNG seeded with sample_ID = {sample_ID}")
+
+        data = self.create_data()
+        return data
+
+    def reproduce_data(self, sample_ID):
+        """
+        Reproduce the exact dataset that was generated with *sample_ID*.
+
+        Parameters
+        ----------
+        sample_ID : int
+            The seed recorded in the data file's metadata (``Sample ID``).
+
+        Returns
+        -------
+        data : object
+            The same dataset that was originally produced with this seed.
+        """
+        sample_ID = int(sample_ID)
+        self.logger.debug(f"Reproducing dataset with sample_ID = {sample_ID}")
+        return self.create_data_for_lab(sample_ID=sample_ID)
+
+    def create_data_file(self):
+        """Generate data and write it to a file, returning the filename."""
+        self.create_data_for_lab()
+        return self.write_data_to_file()
+
+    def get_data(self):
+        return self.data
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
     def _cleanup(self, pattern=None):
-        from pathlib import Path
-
+        """Delete all data files created during this session."""
         for ff in self.list_of_data_files:
-            # Check if file exists before deleting
-            file_path = Path(ff)
-            if file_path.exists():
-                file_path.unlink()
+            fp = Path(ff)
+            if fp.exists():
+                fp.unlink()
             else:
-                print("The file does not exist")
+                self.logger.warning(f"File not found during cleanup: {ff}")
 
-        # Delete multiple files using a pattern
         if pattern is not None:
-            for file_path in Path(".").glob(pattern):
-                file_path.unlink()
-
-    # def process_file(self, filename=None):
-    #     self.read_data(filename)
-    #     result = self.process_data()
-    #     return result
+            for fp in Path(".").glob(pattern):
+                fp.unlink()
 
     def _valid_ID(self, ID):
-        if ID in ["23745411"]:
-            return True
-        return False
+        return ID in ["23745411"]
 
     def _round_values(self, values, precision=None):
         if precision is None:
             precision = self.precision
 
-        # Convert precision to integer if it's a float
         if isinstance(precision, float):
-            if precision >= 0:
-                precision = int(precision)
-            else:
-                precision = int(-np.log10(precision))
-        elif not isinstance(precision, (int, type(None))):
-            raise TypeError(
-                f"Precision must be an integer or float, got {type(precision)}"
-            )
+            precision = int(precision) if precision >= 0 else int(-np.log10(precision))
+        elif not isinstance(precision, int):
+            raise TypeError(f"precision must be int or float, got {type(precision)}")
 
         return np.round(values, decimals=precision)
 
@@ -320,29 +344,27 @@ class cek_labs(ABC):
         return self._round_values(np.random.uniform(lower, upper, n))
 
     def _generate_normal_random(self, n, prm):
-        list_of_1d_arrays = []
+        arrays = []
         for p in prm:
             values = np.random.normal(p[0], p[1], size=n)
-            list_of_1d_arrays.append(self._round_values(values))
+            arrays.append(self._round_values(values))
 
-        if len(prm) == 1:
-            return np.array(self._round_values(values))
-        else:
-            return np.column_stack([*list_of_1d_arrays])
+        return arrays[0] if len(arrays) == 1 else np.column_stack(arrays)
 
     def _generate_noise(self, n, noise_level=None, ntype="normal"):
-        if noise_level == None:
-            raise ValueError("Missing noise level")
+        if noise_level is None:
+            raise ValueError("noise_level must be provided")
         if noise_level <= 0:
             return np.zeros(n)
         if ntype == "normal":
             return np.random.normal(0, noise_level, size=n)
+        raise ValueError(f"Unknown noise type: {ntype!r}")
 
     def _generate_data_from_function(self, func, params, nvalues, xrange):
-        x = np.sort(self._generate_uniform_random(nvalues, *xrange))
-        y = func(x, *params) + self._generate_noise(nvalues)
-        y = self._round_values(y)
-        return np.column_stack((x, y))
+        """Legacy helper — prefer generate_data_from_function for new code."""
+        x = np.sort(self._generate_uniform_random(*xrange, nvalues))
+        y = func(x, *params) + self._generate_noise(nvalues, self.noise_level)
+        return np.column_stack((x, self._round_values(y)))
 
     def generate_data_from_function(
         self,
@@ -357,103 +379,68 @@ class cek_labs(ABC):
         positive: bool = False,
     ) -> np.ndarray:
         """
-        Generate synthetic data points from a given function with optional noise and background.
+        Generate synthetic data from *function* with optional noise and background.
 
         Parameters
         ----------
         function : callable
-            The model function to generate data from. Should accept x values and **kwargs.
+            Model function; called as ``function(x, **params)``.
         params : dict
-            Parameters to pass to the function as keyword arguments.
+            Keyword arguments forwarded to *function*.
         nvalues : int
-            Number of data points to generate.
-        xrange : tuple of float, optional
-            Range of x values (min, max). Required if generating data points.
-        xspacing : str, default='random'
-            Method to space x values. Options:
-            - 'linear': Evenly spaced points
-            - 'random': Uniformly distributed random points
+            Number of data points.
+        xrange : (float, float)
+            (min, max) bounds for x values.
+        xspacing : {'random', 'linear'}
+            How x values are spaced.
         noise_level : float, optional
-            Standard deviation of Gaussian noise to add to y values.
+            Standard deviation of Gaussian noise added to y.
         background : float, optional
-            Constant background level to add to all y values.
+            Constant offset added to all y values.
         weights : bool, optional
-            If True, include weights in output (NOT IMPLEMENTED).
-        positive : bool, default=False
-            If True, take absolute value of final y values.
+            Reserved — not yet implemented.
+        positive : bool
+            If True, replace each y with max(ε, |y|).
 
         Returns
         -------
         np.ndarray
-            2D array with shape (nvalues, 2) containing (x, y) pairs.
-
-        Raises
-        ------
-        ValueError
-            If xrange is None or invalid xspacing type is provided.
+            Shape (nvalues, 2) array of (x, y) pairs.
         """
-        # Validate inputs
         if xrange is None:
-            raise ValueError("xrange must be provided as (min, max) tuple")
-
+            raise ValueError("xrange must be provided as (min, max)")
         if not isinstance(nvalues, int) or nvalues <= 0:
             raise ValueError("nvalues must be a positive integer")
 
-        # Generate x values
         if xspacing == "linear":
             x = np.linspace(*xrange, nvalues)
         elif xspacing == "random":
             x = np.sort(self._generate_uniform_random(*xrange, nvalues))
         else:
-            raise ValueError(f"xspacing must be 'linear' or 'random', got '{xspacing}'")
+            raise ValueError(f"xspacing must be 'linear' or 'random', got {xspacing!r}")
 
-        # Generate base y values from function
         y = function(x, **params)
 
-        # Add optional modifications
         if background is not None:
-            y += background
+            y = y + background
 
         if noise_level is not None:
-            y += self._generate_noise(nvalues, noise_level)
+            y = y + self._generate_noise(nvalues, noise_level)
 
         if positive:
             eps = np.power(10.0, -self.precision)
-            y = [max(eps, np.abs(x)) for x in y]
+            y = np.array([max(eps, abs(v)) for v in y])
 
-        # Note: weights parameter is currently unused
-        if weights is not None:
-            # TODO: Implement weights handling
-            pass
+        return np.column_stack((x, self._round_values(y)))
 
-        y = self._round_values(y)
-
-        return np.column_stack((x, y))
-
-    def create_data_file(self):
-        data = self.create_data()
-        self.write_data_to_file(self.metadata["output_file"], data, **self.metadata)
-        return self.metadata["output_file"]
-
-    def create_data_for_lab(self,seed_local=None):
-        if seed_local is None:
-            seed_local = np.random.randint(1,999999)
-        self.add_metadata( **{"sample_ID" : seed_local} )
-        np.random.seed( seed_local )
-        data = self.create_data()
-        return data
-
-    def get_data(self):
-        return self.data
-
-    def get_metadata(self):
-        return self.metadata
+    # ------------------------------------------------------------------
+    # Abstract interface
+    # ------------------------------------------------------------------
 
     @abstractmethod
     def setup_lab(self, **kwargs):
-        pass
+        """Initialise lab-specific state. Called once during __init__."""
 
     @abstractmethod
     def create_data(self):
-        pass
-
+        """Generate and return the dataset for this lab."""
